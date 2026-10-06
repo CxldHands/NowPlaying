@@ -6,6 +6,9 @@ edition = "2024"
 [dependencies]
 axum = "0.8.9"
 base64 = "0.23.1"
+muda = "0.21.0"
 serde = { version = "1.0.229", features = ["derive"] }
 tokio = { version = "1.53.2", features = ["full"] }
+tray-icon = "0.26.0"
 win-gsmtc = "0.1.0"
+winit = "0.30.13"

@@ -4,13 +4,14 @@ mod playback;
 mod server;
 mod smtc;
 mod state;
+mod tray;
 
 use playback::start_playback_clock;
 use server::start_server;
 use smtc::start_smtc;
 use state::NowPlayingState;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::{watch, Mutex};
 
 #[tokio::main]
 async fn main() {
@@ -22,6 +23,8 @@ async fn main() {
     // ─────────────────────────────────────────────
 
     let state = Arc::new(Mutex::new(NowPlayingState::default()));
+
+    let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
     // ─────────────────────────────────────────────
     // Playback Clock
@@ -39,5 +42,9 @@ async fn main() {
     // Windows SMTC
     // ─────────────────────────────────────────────
 
-    start_smtc(Arc::clone(&state)).await;
+    std::thread::spawn(move || {
+        tray::run_tray(shutdown_tx);
+    });
+
+    start_smtc(Arc::clone(&state), shutdown_rx).await;
 }
