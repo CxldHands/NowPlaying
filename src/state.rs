@@ -11,6 +11,7 @@ pub struct NowPlayingState {
     pub album: Option<String>,
     pub artwork: Option<Vec<u8>>,
     pub artwork_type: Option<String>,
+    pub artwork_version: u64,
 
     // Playback information
     pub position_ms: i64,
@@ -29,6 +30,7 @@ impl Default for NowPlayingState {
             album: None,
             artwork: None,
             artwork_type: None,
+            artwork_version: 0,
             position_ms: 0,
             duration_ms: 0,
             is_playing: false,

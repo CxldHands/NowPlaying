@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod instance;
 mod server;
 mod smtc;
 mod state;
@@ -16,6 +17,14 @@ async fn main() {
     println!("🎵 NowPlaying");
     println!("---------------");
 
+    let _instance_guard = match instance::acquire() {
+        Some(guard) => guard,
+        None => {
+            println!("NowPlaying is already running.");
+            return;
+        }
+    };
+
     // ─────────────────────────────────────────────
     // Shared Application State
     // ─────────────────────────────────────────────
@@ -28,7 +37,7 @@ async fn main() {
     // Local HTTP Server
     // ─────────────────────────────────────────────
 
-    tokio::spawn(start_server(Arc::clone(&state)));
+    tokio::spawn(start_server(Arc::clone(&state),shutdown_rx.clone(),));
 
     // ─────────────────────────────────────────────
     // Windows SMTC

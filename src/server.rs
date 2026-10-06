@@ -1,5 +1,10 @@
-use axum::{Json, Router, extract::State, response::Html, routing::get};
-use base64::{Engine as _, engine::general_purpose};
+use axum::{
+    Json, Router,
+    extract::State,
+    http::header,
+    response::{Html, IntoResponse},
+    routing::get,
+};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -17,7 +22,7 @@ struct NowPlayingResponse {
     position_ms: i64,
     duration_ms: i64,
     is_playing: bool,
-    artwork: Option<String>,
+    artwork_version: u64,
 }
 
 // ─────────────────────────────────────────────
@@ -63,14 +68,6 @@ async fn script() -> ([(&'static str, &'static str); 1], &'static str) {
 async fn now_playing(State(state): State<Arc<Mutex<NowPlayingState>>>) -> Json<NowPlayingResponse> {
     let current = state.lock().await;
 
-    let artwork = match (&current.artwork, &current.artwork_type) {
-        (Some(data), Some(content_type)) => {
-            let encoded = general_purpose::STANDARD.encode(data);
-            Some(format!("data:{content_type};base64,{encoded}"))
-        }
-        _ => None,
-    };
-
     Json(NowPlayingResponse {
         title: current.title.clone(),
         artist: current.artist.clone(),
@@ -78,8 +75,24 @@ async fn now_playing(State(state): State<Arc<Mutex<NowPlayingState>>>) -> Json<N
         position_ms: current.current_position_ms(),
         duration_ms: current.duration_ms,
         is_playing: current.is_playing,
-        artwork,
+        artwork_version: current.artwork_version,
     })
+}
+
+async fn artwork(
+    State(state): State<Arc<Mutex<NowPlayingState>>>,
+) -> impl IntoResponse {
+    let current = state.lock().await;
+
+    match (&current.artwork, &current.artwork_type) {
+        (Some(data), Some(content_type)) => (
+            [(header::CONTENT_TYPE, content_type.clone())],
+            data.clone(),
+        )
+            .into_response(),
+
+        _ => axum::http::StatusCode::NOT_FOUND.into_response(),
+    }
 }
 
 async fn gsap() -> ([(&'static str, &'static str); 1], &'static str) {
@@ -93,7 +106,10 @@ async fn gsap() -> ([(&'static str, &'static str); 1], &'static str) {
 // Server
 // ─────────────────────────────────────────────
 
-pub async fn start_server(state: Arc<Mutex<NowPlayingState>>) {
+pub async fn start_server(
+    state: Arc<Mutex<NowPlayingState>>,
+    mut shutdown_rx: tokio::sync::watch::Receiver<bool>,
+) {
     let app = Router::new()
         .route("/", get(control))
         .route("/control.css", get(control_style))
@@ -103,20 +119,26 @@ pub async fn start_server(state: Arc<Mutex<NowPlayingState>>) {
         .route("/app.js", get(script))
         .route("/gsap.min.js", get(gsap))
         .route("/now-playing", get(now_playing))
+        .route("/artwork", get(artwork))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
         .unwrap();
 
-    // Give Axum a moment to begin accepting requests.
-    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-
     // Open the control page in the default browser.
-    std::process::Command::new("cmd")
+    if let Err(error) = std::process::Command::new("cmd")
         .args(["/C", "start", "", "http://localhost:3000"])
         .spawn()
-        .expect("Failed to open browser");
+    {
+        eprintln!("Could not open browser: {error}");
+    }
 
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app)
+        .with_graceful_shutdown(async move {
+            let _ = shutdown_rx.changed().await;
+            println!("Shutdown signal received by server.");
+        })
+        .await
+        .unwrap();
 }

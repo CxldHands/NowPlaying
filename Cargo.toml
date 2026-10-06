@@ -5,10 +5,17 @@ edition = "2024"
 
 [dependencies]
 axum = "0.8.9"
-base64 = "0.23.1"
 muda = "0.21.0"
 serde = { version = "1.0.229", features = ["derive"] }
-tokio = { version = "1.53.2", features = ["full"] }
+tokio = { version = "1.53.2", features = ["macros", "rt-multi-thread", "sync", "net"] }
 tray-icon = "0.26.0"
 win-gsmtc = "0.1.0"
+windows-sys = { version = "0.61", features = ["Win32_System_Threading", "Win32_Foundation"] }
 winit = "0.30.13"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

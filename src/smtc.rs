@@ -93,8 +93,8 @@ pub async fn start_smtc(
 
                                             if let Some(image) = image {
                                                 current.artwork = Some(image.data);
-                                                current.artwork_type =
-                                                    Some(image.content_type);
+                                                current.artwork_type = Some(image.content_type);
+                                                current.artwork_version += 1;
                                             }
                                         }
                                     }

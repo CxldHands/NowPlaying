@@ -16,10 +16,11 @@ const duration = document.getElementById("duration");
 // This represents what the UI currently knows.
 // We compare incoming data against this state
 // so we don't unnecessarily update the UI.
+
 const currentState = {
     title: null,
     artist: null,
-    artwork: null,
+    artworkVersion: null,
     isPlaying: false,
 };
 
@@ -40,7 +41,7 @@ function formatTime(milliseconds) {
 // Track Updates
 // ─────────────────────────────────────────────
 
-function updateTrack(data) {
+async function updateTrack(data) {
     const trackChanged =
         data.title !== currentState.title ||
         data.artist !== currentState.artist;
@@ -49,7 +50,9 @@ function updateTrack(data) {
         return;
     }
 
-    // Animate the current track out to the left.
+    const newArtwork = await fetchArtwork(data);
+
+    // Animate the current track out.
     gsap.to(trackContent, {
         opacity: 0,
         x: -40,
@@ -60,19 +63,14 @@ function updateTrack(data) {
             title.textContent = data.title ?? "No song playing";
             artist.textContent = data.artist ?? "—";
 
-            if (
-                data.artwork &&
-                data.artwork !== currentState.artwork
-            ) {
-                albumArt.src = data.artwork;
+            if (newArtwork) {
+                albumArt.src = newArtwork;
             }
 
-            // Position the new track just to the right.
             gsap.set(trackContent, {
                 x: 40,
             });
 
-            // Bring the new track into place.
             gsap.to(trackContent, {
                 opacity: 1,
                 x: 0,
@@ -82,9 +80,28 @@ function updateTrack(data) {
 
             currentState.title = data.title;
             currentState.artist = data.artist;
-            currentState.artwork = data.artwork;
+            currentState.artworkVersion = data.artwork_version;
         },
     });
+}
+
+async function fetchArtwork(data) {
+    if (!data.artwork_version) {
+        return null;
+    }
+
+    try {
+        const response = await fetch("/artwork");
+
+        if (!response.ok) {
+            return null;
+        }
+
+        return URL.createObjectURL(await response.blob());
+    } catch (error) {
+        console.error("Could not load artwork:", error);
+        return null;
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -143,6 +160,7 @@ async function updateNowPlaying() {
         updateTrack(data);
         updatePlaybackState(data);
         updateProgress(data);
+
     } catch (error) {
         console.error(
             "Could not connect to NowPlaying:",
