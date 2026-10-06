@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>NowPlaying</title>
+
+    <link rel="stylesheet" href="/control.css">
+</head>
+
+<body>
+
+    <main class="container">
+
+        <!-- ─────────────────────────────────────────────
+             Header
+             ───────────────────────────────────────────── -->
+
+        <header class="header">
+            <h1>NowPlaying</h1>
+
+            <p class="subtitle">
+                Your music. On your stream.
+            </p>
+        </header>
+
+        <!-- ─────────────────────────────────────────────
+             Welcome
+             ───────────────────────────────────────────── -->
+
+        <section class="welcome">
+            <p>
+                Welcome to NowPlaying.
+                Your currently playing music will
+                automatically appear in OBS.
+            </p>
+        </section>
+
+        <!-- ─────────────────────────────────────────────
+             Connection Status
+             ───────────────────────────────────────────── -->
+
+        <div class="status">
+            <div id="status-dot" class="status-dot"></div>
+
+            <span id="status-text">
+                Checking media...
+            </span>
+        </div>
+
+        <div id="track" class="track">
+            Nothing playing
+        </div>
+
+        <!-- ─────────────────────────────────────────────
+             Setup Instructions
+             ───────────────────────────────────────────── -->
+
+        <section class="section">
+
+            <div class="label">
+                Quick Setup
+            </div>
+
+            <div class="steps">
+
+                <div class="step">
+                    <div class="step-number">1</div>
+
+                    <div>
+                        <strong>Add the overlay to OBS</strong>
+
+                        <p>
+                            Add a Browser Source in OBS and
+                            use the overlay URL below.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+
+                    <div>
+                        <strong>Set the Browser Source size</strong>
+
+                        <p>
+                            Set the Browser Source to
+                            <strong>380 x 460 px</strong>
+                            You can adjust it later to fit your stream layout.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+
+                    <div>
+                        <strong>Start playing music</strong>
+
+                        <p>
+                            That's it. NowPlaying handles
+                            the rest automatically.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ─────────────────────────────────────────────
+             OBS Overlay
+             ───────────────────────────────────────────── -->
+
+        <section class="section">
+
+            <div class="label">
+                OBS Overlay
+            </div>
+
+            <div class="url-container">
+
+                <div id="overlay-url" class="url">
+                    localhost:3000/••••••
+                </div>
+
+                <button
+                    id="visibility-button"
+                    class="icon-button"
+                    aria-label="Show overlay URL"
+                    title="Show overlay URL"
+                >
+                    <svg
+                        id="eye-icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"
+                        />
+                        <circle
+                            cx="12"
+                            cy="12"
+                            r="2.5"
+                        />
+                    </svg>
+                </button>
+
+            </div>
+
+            <div class="buttons">
+
+                <button id="copy-button">
+                    Copy URL
+                </button>
+
+                <button
+                    id="open-button"
+                    class="secondary"
+                >
+                    Open Overlay
+                </button>
+
+            </div>
+
+            <div id="message" class="message"></div>
+
+        </section>
+
+    </main>
+
+    <script src="/control.js"></script>
+
+</body>
+</html>
