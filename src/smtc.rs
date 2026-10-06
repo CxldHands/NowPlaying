@@ -72,10 +72,14 @@ pub async fn start_smtc(
                                             }
 
                                             if let Some(timeline) = model.timeline {
-                                                current.position =
-                                                    timeline.position / 10_000_000;
-                                                current.duration =
-                                                    timeline.end / 10_000_000;
+                                                current.position_ms = timeline.position / 10_000;
+                                                current.duration_ms = timeline.end / 10_000;
+
+                                                if current.is_playing {
+                                                    current.position_anchor = Some(std::time::Instant::now());
+                                                } else {
+                                                    current.position_anchor = None;
+                                                }
                                             }
                                         }
 
@@ -123,8 +127,8 @@ pub async fn start_smtc(
                                     }
                                 );
 
-                                println!("Position: {}s", current.position);
-                                println!("Duration: {}s", current.duration);
+                                println!("Position: {}ms", current.current_position_ms());
+                                println!("Duration: {}ms", current.duration_ms);
 
                                 if let Some(artwork_type) = &current.artwork_type {
                                     let size = current

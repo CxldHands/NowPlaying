@@ -9,7 +9,6 @@ const progress = document.getElementById("progress");
 const position = document.getElementById("position");
 const duration = document.getElementById("duration");
 
-
 // ─────────────────────────────────────────────
 // UI State
 // ─────────────────────────────────────────────
@@ -24,20 +23,18 @@ const currentState = {
     isPlaying: false,
 };
 
-
 // ─────────────────────────────────────────────
 // Utilities
 // ─────────────────────────────────────────────
 
-function formatTime(seconds) {
-    seconds = Math.floor(seconds);
+function formatTime(milliseconds) {
+    const seconds = Math.floor(milliseconds / 1000);
 
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
 
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
-
 
 // ─────────────────────────────────────────────
 // Track Updates
@@ -108,16 +105,15 @@ function updatePlaybackState(data) {
     );
 }
 
-
 // ─────────────────────────────────────────────
 // Progress
 // ─────────────────────────────────────────────
 
 function updateProgress(data) {
-    position.textContent = formatTime(data.position);
-    duration.textContent = formatTime(data.duration);
+    position.textContent = formatTime(data.position_ms);
+    duration.textContent = formatTime(data.duration_ms);
 
-    if (data.duration <= 0) {
+    if (data.duration_ms <= 0) {
         gsap.set(progress, {
             width: "0%",
         });
@@ -126,15 +122,14 @@ function updateProgress(data) {
     }
 
     const percentage =
-        (data.position / data.duration) * 100;
+        (data.position_ms / data.duration_ms) * 100;
 
     gsap.to(progress, {
         width: `${percentage}%`,
-        duration: 1,
+        duration: 0.1,
         ease: "none",
     });
 }
-
 
 // ─────────────────────────────────────────────
 // Main Update
@@ -155,7 +150,6 @@ async function updateNowPlaying() {
         );
     }
 }
-
 
 // ─────────────────────────────────────────────
 // Initialization

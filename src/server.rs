@@ -14,8 +14,8 @@ struct NowPlayingResponse {
     title: Option<String>,
     artist: Option<String>,
     album: Option<String>,
-    position: i64,
-    duration: i64,
+    position_ms: i64,
+    duration_ms: i64,
     is_playing: bool,
     artwork: Option<String>,
 }
@@ -75,8 +75,8 @@ async fn now_playing(State(state): State<Arc<Mutex<NowPlayingState>>>) -> Json<N
         title: current.title.clone(),
         artist: current.artist.clone(),
         album: current.album.clone(),
-        position: current.position,
-        duration: current.duration,
+        position_ms: current.current_position_ms(),
+        duration_ms: current.duration_ms,
         is_playing: current.is_playing,
         artwork,
     })

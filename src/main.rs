@@ -1,12 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod playback;
 mod server;
 mod smtc;
 mod state;
 mod tray;
 
-use playback::start_playback_clock;
 use server::start_server;
 use smtc::start_smtc;
 use state::NowPlayingState;
@@ -25,12 +23,6 @@ async fn main() {
     let state = Arc::new(Mutex::new(NowPlayingState::default()));
 
     let (shutdown_tx, shutdown_rx) = watch::channel(false);
-
-    // ─────────────────────────────────────────────
-    // Playback Clock
-    // ─────────────────────────────────────────────
-
-    start_playback_clock(Arc::clone(&state));
 
     // ─────────────────────────────────────────────
     // Local HTTP Server
