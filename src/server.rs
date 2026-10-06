@@ -48,13 +48,13 @@ async fn control_script() -> ([(&'static str, &'static str); 1], &'static str) {
 }
 
 async fn overlay() -> Html<&'static str> {
-    Html(include_str!("../overlay/index.html"))
+    Html(include_str!("../overlay/skins/default/index.html"))
 }
 
 async fn style() -> ([(&'static str, &'static str); 1], &'static str) {
     (
         [("Content-Type", "text/css")],
-        include_str!("../overlay/style.css"),
+        include_str!("../overlay/skins/default/style.css"),
     )
 }
 
@@ -62,6 +62,20 @@ async fn script() -> ([(&'static str, &'static str); 1], &'static str) {
     (
         [("Content-Type", "application/javascript")],
         include_str!("../overlay/app.js"),
+    )
+}
+
+async fn default_skin_script() -> ([(&'static str, &'static str); 1], &'static str) {
+    (
+        [("Content-Type", "application/javascript")],
+        include_str!("../overlay/skins/default/skin.js"),
+    )
+}
+
+async fn utils() -> ([(&'static str, &'static str); 1], &'static str) {
+    (
+        [("Content-Type", "application/javascript")],
+        include_str!("../overlay/utils.js"),
     )
 }
 
@@ -114,12 +128,14 @@ pub async fn start_server(
         .route("/", get(control))
         .route("/control.css", get(control_style))
         .route("/control.js", get(control_script))
+        .route("/skins/default/skin.js", get(default_skin_script))
         .route("/overlay", get(overlay))
         .route("/style.css", get(style))
         .route("/app.js", get(script))
         .route("/gsap.min.js", get(gsap))
         .route("/now-playing", get(now_playing))
         .route("/artwork", get(artwork))
+        .route("/utils.js", get(utils))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
