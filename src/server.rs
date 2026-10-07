@@ -1,6 +1,6 @@
 use axum::{
     Json, Router,
-    extract::State,
+    extract::{Query, State},
     http::header,
     response::{Html, IntoResponse},
     routing::get,
@@ -11,8 +11,13 @@ use tokio::sync::Mutex;
 use crate::state::NowPlayingState;
 
 // ─────────────────────────────────────────────
-// Overlay Response
+// Shared Types
 // ─────────────────────────────────────────────
+
+#[derive(Debug, serde::Deserialize)]
+struct SkinQuery {
+    skin: Option<String>,
+}
 
 #[derive(Debug, serde::Serialize)]
 struct NowPlayingResponse {
@@ -26,7 +31,7 @@ struct NowPlayingResponse {
 }
 
 // ─────────────────────────────────────────────
-// Overlay Routes
+// Control Page
 // ─────────────────────────────────────────────
 
 async fn control() -> Html<&'static str> {
@@ -47,28 +52,66 @@ async fn control_script() -> ([(&'static str, &'static str); 1], &'static str) {
     )
 }
 
-async fn overlay() -> Html<&'static str> {
-    Html(include_str!("../overlay/skins/default/index.html"))
+// ─────────────────────────────────────────────
+// Overlay
+// ─────────────────────────────────────────────
+
+async fn overlay(Query(query): Query<SkinQuery>) -> Html<&'static str> {
+    match query.skin.as_deref() {
+        Some("ambient") => {
+            Html(include_str!("../overlay/skins/ambient/index.html"))
+        }
+
+        _ => {
+            Html(include_str!("../overlay/skins/default/index.html"))
+        }
+    }
 }
 
-async fn style() -> ([(&'static str, &'static str); 1], &'static str) {
+// ─────────────────────────────────────────────
+// Default Skin
+// ─────────────────────────────────────────────
+
+async fn default_style() -> ([(&'static str, &'static str); 1], &'static str) {
     (
         [("Content-Type", "text/css")],
         include_str!("../overlay/skins/default/style.css"),
     )
 }
 
-async fn script() -> ([(&'static str, &'static str); 1], &'static str) {
-    (
-        [("Content-Type", "application/javascript")],
-        include_str!("../overlay/app.js"),
-    )
-}
-
-async fn default_skin_script() -> ([(&'static str, &'static str); 1], &'static str) {
+async fn default_script() -> ([(&'static str, &'static str); 1], &'static str) {
     (
         [("Content-Type", "application/javascript")],
         include_str!("../overlay/skins/default/skin.js"),
+    )
+}
+
+// ─────────────────────────────────────────────
+// Ambient Skin
+// ─────────────────────────────────────────────
+
+async fn ambient_style() -> ([(&'static str, &'static str); 1], &'static str) {
+    (
+        [("Content-Type", "text/css")],
+        include_str!("../overlay/skins/ambient/style.css"),
+    )
+}
+
+async fn ambient_script() -> ([(&'static str, &'static str); 1], &'static str) {
+    (
+        [("Content-Type", "application/javascript")],
+        include_str!("../overlay/skins/ambient/skin.js"),
+    )
+}
+
+// ─────────────────────────────────────────────
+// Shared Assets
+// ─────────────────────────────────────────────
+
+async fn app_script() -> ([(&'static str, &'static str); 1], &'static str) {
+    (
+        [("Content-Type", "application/javascript")],
+        include_str!("../overlay/app.js"),
     )
 }
 
@@ -79,7 +122,20 @@ async fn utils() -> ([(&'static str, &'static str); 1], &'static str) {
     )
 }
 
-async fn now_playing(State(state): State<Arc<Mutex<NowPlayingState>>>) -> Json<NowPlayingResponse> {
+async fn gsap() -> ([(&'static str, &'static str); 1], &'static str) {
+    (
+        [("Content-Type", "application/javascript")],
+        include_str!("../overlay/gsap.min.js"),
+    )
+}
+
+// ─────────────────────────────────────────────
+// Now Playing API
+// ─────────────────────────────────────────────
+
+async fn now_playing(
+    State(state): State<Arc<Mutex<NowPlayingState>>>,
+) -> Json<NowPlayingResponse> {
     let current = state.lock().await;
 
     Json(NowPlayingResponse {
@@ -109,13 +165,6 @@ async fn artwork(
     }
 }
 
-async fn gsap() -> ([(&'static str, &'static str); 1], &'static str) {
-    (
-        [("Content-Type", "application/javascript")],
-        include_str!("../overlay/gsap.min.js"),
-    )
-}
-
 // ─────────────────────────────────────────────
 // Server
 // ─────────────────────────────────────────────
@@ -125,17 +174,25 @@ pub async fn start_server(
     mut shutdown_rx: tokio::sync::watch::Receiver<bool>,
 ) {
     let app = Router::new()
+        // Control
         .route("/", get(control))
         .route("/control.css", get(control_style))
         .route("/control.js", get(control_script))
-        .route("/skins/default/skin.js", get(default_skin_script))
+        // Overlay
         .route("/overlay", get(overlay))
-        .route("/style.css", get(style))
-        .route("/app.js", get(script))
+        // Default Skin
+        .route("/skins/default/style.css", get(default_style))
+        .route("/skins/default/skin.js", get(default_script))
+        // Ambient Skin
+        .route("/skins/ambient/style.css", get(ambient_style))
+        .route("/skins/ambient/skin.js", get(ambient_script))
+        // Shared Assets
+        .route("/app.js", get(app_script))
+        .route("/utils.js", get(utils))
         .route("/gsap.min.js", get(gsap))
+        // API
         .route("/now-playing", get(now_playing))
         .route("/artwork", get(artwork))
-        .route("/utils.js", get(utils))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")

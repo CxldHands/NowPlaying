@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Now Playing</title>
+
+    <link rel="stylesheet" href="/skins/ambient/style.css">
+</head>
+
+<body>
+    <main class="now-playing-card">
+
+        <!-- ─────────────────────────────────────────────
+             Background
+             ───────────────────────────────────────────── -->
+
+        <div class="background">
+            <img id="background-art" src="" alt="">
+        </div>
+
+        <!-- ─────────────────────────────────────────────
+             Content
+             ───────────────────────────────────────────── -->
+
+        <div class="content">
+
+            <!-- Album Artwork -->
+            <div class="album-art-container">
+                <img
+                    id="album-art"
+                    class="album-art"
+                    src=""
+                    alt="Album artwork"
+                >
+            </div>
+
+            <!-- Track Information -->
+            <section class="track-content">
+
+                <div class="track-info">
+                    <h1 id="title">Song Title</h1>
+                    <p id="artist">Artist Name</p>
+                </div>
+
+                <!-- Playback -->
+                <section class="playback">
+
+                    <div class="progress-bar">
+                        <div id="progress" class="progress"></div>
+                    </div>
+
+                    <div class="time">
+                        <span id="position">0:00</span>
+                        <span id="duration">0:00</span>
+                    </div>
+
+                </section>
+
+            </section>
+
+        </div>
+
+    </main>
+
+    <script src="/gsap.min.js"></script>
+    <script src="/utils.js"></script>
+    <script src="/skins/ambient/skin.js"></script>
+    <script src="/app.js"></script>
+</body>
+</html>
