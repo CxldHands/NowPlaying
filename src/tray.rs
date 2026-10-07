@@ -95,43 +95,10 @@ fn open_nowplaying() {
 }
 
 fn create_icon() -> Icon {
-    let width = 32u32;
-    let height = 32u32;
+    let width = 32;
+    let height = 32;
 
-    let mut rgba = vec![0u8; (width * height * 4) as usize];
-
-    for y in 0..height {
-        for x in 0..width {
-            let index = ((y * width + x) * 4) as usize;
-
-            let dx = x as i32 - 16;
-            let dy = y as i32 - 16;
-
-            // Background circle
-            if dx * dx + dy * dy <= 14 * 14 {
-                rgba[index] = 25;
-                rgba[index + 1] = 25;
-                rgba[index + 2] = 25;
-                rgba[index + 3] = 255;
-            }
-
-            // Simple vertical mark
-            if (13..=18).contains(&x) && (8..=20).contains(&y) {
-                rgba[index] = 255;
-                rgba[index + 1] = 255;
-                rgba[index + 2] = 255;
-                rgba[index + 3] = 255;
-            }
-
-            // Top-right mark
-            if (18..=22).contains(&x) && (8..=12).contains(&y) {
-                rgba[index] = 255;
-                rgba[index + 1] = 255;
-                rgba[index + 2] = 255;
-                rgba[index + 3] = 255;
-            }
-        }
-    }
+    let rgba = include_bytes!("../overlay/assets/trayicon.rgba").to_vec();
 
     Icon::from_rgba(rgba, width, height)
         .expect("Failed to create tray icon")

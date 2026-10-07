@@ -1,12 +1,13 @@
 use axum::{
-    Json, Router,
     extract::{Query, State},
-    http::header,
-    response::{Html, IntoResponse},
+    http::StatusCode,
+    response::IntoResponse,
     routing::get,
+    Router,
 };
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::{watch, Mutex};
 
 use crate::state::NowPlayingState;
 
@@ -14,40 +15,45 @@ use crate::state::NowPlayingState;
 // Shared Types
 // ─────────────────────────────────────────────
 
-#[derive(Debug, serde::Deserialize)]
-struct SkinQuery {
+type AppState = Arc<Mutex<NowPlayingState>>;
+
+#[derive(Debug, Deserialize)]
+struct OverlayQuery {
     skin: Option<String>,
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, Serialize)]
 struct NowPlayingResponse {
     title: Option<String>,
     artist: Option<String>,
     album: Option<String>,
+    artwork_version: u64,
     position_ms: i64,
     duration_ms: i64,
     is_playing: bool,
-    artwork_version: u64,
 }
 
 // ─────────────────────────────────────────────
 // Control Page
 // ─────────────────────────────────────────────
 
-async fn control() -> Html<&'static str> {
-    Html(include_str!("../overlay/control.html"))
+async fn control() -> impl IntoResponse {
+    (
+        [("Content-Type", "text/html; charset=utf-8")],
+        include_str!("../overlay/control.html"),
+    )
 }
 
-async fn control_style() -> ([(&'static str, &'static str); 1], &'static str) {
+async fn control_style() -> impl IntoResponse {
     (
-        [("Content-Type", "text/css")],
+        [("Content-Type", "text/css; charset=utf-8")],
         include_str!("../overlay/control.css"),
     )
 }
 
-async fn control_script() -> ([(&'static str, &'static str); 1], &'static str) {
+async fn control_script() -> impl IntoResponse {
     (
-        [("Content-Type", "application/javascript")],
+        [("Content-Type", "application/javascript; charset=utf-8")],
         include_str!("../overlay/control.js"),
     )
 }
@@ -56,32 +62,34 @@ async fn control_script() -> ([(&'static str, &'static str); 1], &'static str) {
 // Overlay
 // ─────────────────────────────────────────────
 
-async fn overlay(Query(query): Query<SkinQuery>) -> Html<&'static str> {
-    match query.skin.as_deref() {
-        Some("ambient") => {
-            Html(include_str!("../overlay/skins/ambient/index.html"))
-        }
+async fn overlay(Query(query): Query<OverlayQuery>) -> impl IntoResponse {
+    let skin = query.skin.as_deref().unwrap_or("default");
 
-        _ => {
-            Html(include_str!("../overlay/skins/default/index.html"))
-        }
-    }
+    let html = match skin {
+        "ambient" => include_str!("../overlay/skins/ambient/index.html"),
+        _ => include_str!("../overlay/skins/default/index.html"),
+    };
+
+    (
+        [("Content-Type", "text/html; charset=utf-8")],
+        html,
+    )
 }
 
 // ─────────────────────────────────────────────
 // Default Skin
 // ─────────────────────────────────────────────
 
-async fn default_style() -> ([(&'static str, &'static str); 1], &'static str) {
+async fn default_style() -> impl IntoResponse {
     (
-        [("Content-Type", "text/css")],
+        [("Content-Type", "text/css; charset=utf-8")],
         include_str!("../overlay/skins/default/style.css"),
     )
 }
 
-async fn default_script() -> ([(&'static str, &'static str); 1], &'static str) {
+async fn default_script() -> impl IntoResponse {
     (
-        [("Content-Type", "application/javascript")],
+        [("Content-Type", "application/javascript; charset=utf-8")],
         include_str!("../overlay/skins/default/skin.js"),
     )
 }
@@ -90,17 +98,41 @@ async fn default_script() -> ([(&'static str, &'static str); 1], &'static str) {
 // Ambient Skin
 // ─────────────────────────────────────────────
 
-async fn ambient_style() -> ([(&'static str, &'static str); 1], &'static str) {
+async fn ambient_style() -> impl IntoResponse {
     (
-        [("Content-Type", "text/css")],
+        [("Content-Type", "text/css; charset=utf-8")],
         include_str!("../overlay/skins/ambient/style.css"),
     )
 }
 
-async fn ambient_script() -> ([(&'static str, &'static str); 1], &'static str) {
+async fn ambient_script() -> impl IntoResponse {
     (
-        [("Content-Type", "application/javascript")],
+        [("Content-Type", "application/javascript; charset=utf-8")],
         include_str!("../overlay/skins/ambient/skin.js"),
+    )
+}
+
+// ─────────────────────────────────────────────
+// Preview Assets
+// ─────────────────────────────────────────────
+
+async fn default_preview_art() -> (
+    [(&'static str, &'static str); 1],
+    &'static [u8],
+) {
+    (
+        [("Content-Type", "image/webp")],
+        include_bytes!("../overlay/assets/previews/default.webp"),
+    )
+}
+
+async fn ambient_preview_art() -> (
+    [(&'static str, &'static str); 1],
+    &'static [u8],
+) {
+    (
+        [("Content-Type", "image/webp")],
+        include_bytes!("../overlay/assets/previews/ambient.webp"),
     )
 }
 
@@ -108,24 +140,31 @@ async fn ambient_script() -> ([(&'static str, &'static str); 1], &'static str) {
 // Shared Assets
 // ─────────────────────────────────────────────
 
-async fn app_script() -> ([(&'static str, &'static str); 1], &'static str) {
+async fn app_script() -> impl IntoResponse {
     (
-        [("Content-Type", "application/javascript")],
+        [("Content-Type", "application/javascript; charset=utf-8")],
         include_str!("../overlay/app.js"),
     )
 }
 
-async fn utils() -> ([(&'static str, &'static str); 1], &'static str) {
+async fn utils() -> impl IntoResponse {
     (
-        [("Content-Type", "application/javascript")],
+        [("Content-Type", "application/javascript; charset=utf-8")],
         include_str!("../overlay/utils.js"),
     )
 }
 
-async fn gsap() -> ([(&'static str, &'static str); 1], &'static str) {
+async fn gsap() -> impl IntoResponse {
     (
-        [("Content-Type", "application/javascript")],
+        [("Content-Type", "application/javascript; charset=utf-8")],
         include_str!("../overlay/gsap.min.js"),
+    )
+}
+
+async fn favicon() -> impl IntoResponse {
+    (
+        [("Content-Type", "image/svg+xml")],
+        include_str!("../overlay/assets/favicon.svg"),
     )
 }
 
@@ -134,35 +173,56 @@ async fn gsap() -> ([(&'static str, &'static str); 1], &'static str) {
 // ─────────────────────────────────────────────
 
 async fn now_playing(
-    State(state): State<Arc<Mutex<NowPlayingState>>>,
-) -> Json<NowPlayingResponse> {
-    let current = state.lock().await;
-
-    Json(NowPlayingResponse {
-        title: current.title.clone(),
-        artist: current.artist.clone(),
-        album: current.album.clone(),
-        position_ms: current.current_position_ms(),
-        duration_ms: current.duration_ms,
-        is_playing: current.is_playing,
-        artwork_version: current.artwork_version,
-    })
-}
-
-async fn artwork(
-    State(state): State<Arc<Mutex<NowPlayingState>>>,
+    State(state): State<AppState>,
 ) -> impl IntoResponse {
     let current = state.lock().await;
 
-    match (&current.artwork, &current.artwork_type) {
-        (Some(data), Some(content_type)) => (
-            [(header::CONTENT_TYPE, content_type.clone())],
-            data.clone(),
-        )
-            .into_response(),
+    let response = NowPlayingResponse {
+        title: current.title.clone(),
+        artist: current.artist.clone(),
+        album: current.album.clone(),
+        artwork_version: current.artwork_version,
+        position_ms: current.current_position_ms(),
+        duration_ms: current.duration_ms,
+        is_playing: current.is_playing,
+    };
 
-        _ => axum::http::StatusCode::NOT_FOUND.into_response(),
-    }
+    axum::Json(response)
+}
+
+// ─────────────────────────────────────────────
+// Artwork API
+// ─────────────────────────────────────────────
+
+async fn artwork(
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let current = state.lock().await;
+
+    let Some(data) = current.artwork.as_ref() else {
+        return (
+            StatusCode::NOT_FOUND,
+            [("Content-Type", "text/plain")],
+            Vec::new(),
+        )
+            .into_response();
+    };
+
+    let content_type = current
+        .artwork_type
+        .as_deref()
+        .unwrap_or("image/jpeg")
+        .to_string();
+
+    (
+        StatusCode::OK,
+        [
+            ("Content-Type", content_type.as_str()),
+            ("Cache-Control", "no-cache"),
+        ],
+        data.clone(),
+    )
+        .into_response()
 }
 
 // ─────────────────────────────────────────────
@@ -170,48 +230,59 @@ async fn artwork(
 // ─────────────────────────────────────────────
 
 pub async fn start_server(
-    state: Arc<Mutex<NowPlayingState>>,
-    mut shutdown_rx: tokio::sync::watch::Receiver<bool>,
+    state: AppState,
+    mut shutdown_rx: watch::Receiver<bool>,
 ) {
     let app = Router::new()
-        // Control
+        // Control page
         .route("/", get(control))
         .route("/control.css", get(control_style))
         .route("/control.js", get(control_script))
+
         // Overlay
         .route("/overlay", get(overlay))
-        // Default Skin
+
+        // Default skin
         .route("/skins/default/style.css", get(default_style))
         .route("/skins/default/skin.js", get(default_script))
-        // Ambient Skin
+
+        // Ambient skin
         .route("/skins/ambient/style.css", get(ambient_style))
         .route("/skins/ambient/skin.js", get(ambient_script))
-        // Shared Assets
+
+        // Preview assets
+        .route(
+            "/assets/previews/default.webp",
+            get(default_preview_art),
+        )
+        .route(
+            "/assets/previews/ambient.webp",
+            get(ambient_preview_art),
+        )
+
+        // Shared assets
         .route("/app.js", get(app_script))
         .route("/utils.js", get(utils))
         .route("/gsap.min.js", get(gsap))
+        .route("/favicon.svg", get(favicon))
+
         // API
         .route("/now-playing", get(now_playing))
         .route("/artwork", get(artwork))
+
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
-        .unwrap();
+        .expect("Failed to bind local HTTP server");
 
-    // Open the control page in the default browser.
-    if let Err(error) = std::process::Command::new("cmd")
-        .args(["/C", "start", "", "http://localhost:3000"])
-        .spawn()
-    {
-        eprintln!("Could not open browser: {error}");
-    }
+    println!("HTTP server running at http://localhost:3000");
 
     axum::serve(listener, app)
         .with_graceful_shutdown(async move {
             let _ = shutdown_rx.changed().await;
-            println!("Shutdown signal received by server.");
+            println!("HTTP server shutting down.");
         })
         .await
-        .unwrap();
+        .expect("HTTP server failed");
 }

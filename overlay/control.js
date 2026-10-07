@@ -2,42 +2,33 @@
 // DOM Elements
 // ─────────────────────────────────────────────
 
-const overlayUrl =
-    `${window.location.origin}/overlay`;
+const skinSelect = document.getElementById("skin-select");
+const skinPreview = document.getElementById("skin-preview");
 
-const urlElement =
-    document.getElementById("overlay-url");
+const urlElement = document.getElementById("overlay-url");
+const visibilityButton = document.getElementById("visibility-button");
+const copyButton = document.getElementById("copy-button");
+const openButton = document.getElementById("open-button");
+const message = document.getElementById("message");
 
-const visibilityButton =
-    document.getElementById("visibility-button");
-
-const copyButton =
-    document.getElementById("copy-button");
-
-const openButton =
-    document.getElementById("open-button");
-
-const message =
-    document.getElementById("message");
-
-const statusDot =
-    document.getElementById("status-dot");
-
-const statusText =
-    document.getElementById("status-text");
-
-const track =
-    document.getElementById("track");
+const statusDot = document.getElementById("status-dot");
+const statusText = document.getElementById("status-text");
+const track = document.getElementById("track");
 
 let urlVisible = false;
+
 
 // ─────────────────────────────────────────────
 // Overlay URL
 // ─────────────────────────────────────────────
 
+function getOverlayUrl() {
+    return `${window.location.origin}/overlay?skin=${skinSelect.value}`;
+}
+
 function updateUrlVisibility() {
     if (urlVisible) {
-        urlElement.textContent = overlayUrl;
+        urlElement.textContent = getOverlayUrl();
 
         visibilityButton.setAttribute(
             "aria-label",
@@ -52,8 +43,7 @@ function updateUrlVisibility() {
         return;
     }
 
-    urlElement.textContent =
-        "localhost:3000/••••••";
+    urlElement.textContent = "localhost:3000/••••••";
 
     visibilityButton.setAttribute(
         "aria-label",
@@ -66,6 +56,36 @@ function updateUrlVisibility() {
     );
 }
 
+
+// ─────────────────────────────────────────────
+// Skin Preview
+// ─────────────────────────────────────────────
+
+function updateSkinPreview() {
+    skinPreview.src =
+        `/assets/previews/${skinSelect.value}.webp`;
+
+    skinPreview.alt =
+        `${skinSelect.value} skin preview`;
+}
+
+
+// ─────────────────────────────────────────────
+// Skin Selection
+// ─────────────────────────────────────────────
+
+skinSelect.addEventListener("change", () => {
+    urlVisible = false;
+
+    updateUrlVisibility();
+    updateSkinPreview();
+});
+
+
+// ─────────────────────────────────────────────
+// URL Visibility
+// ─────────────────────────────────────────────
+
 visibilityButton.addEventListener("click", () => {
     urlVisible = !urlVisible;
 
@@ -73,6 +93,8 @@ visibilityButton.addEventListener("click", () => {
 });
 
 updateUrlVisibility();
+updateSkinPreview();
+
 
 // ─────────────────────────────────────────────
 // Copy Overlay URL
@@ -80,17 +102,15 @@ updateUrlVisibility();
 
 copyButton.addEventListener("click", async () => {
     try {
-        await navigator.clipboard.writeText(overlayUrl);
+        await navigator.clipboard.writeText(getOverlayUrl());
 
         message.textContent =
             "Overlay URL copied to clipboard.";
 
-        copyButton.textContent =
-            "Copied!";
+        copyButton.textContent = "Copied!";
 
         setTimeout(() => {
-            copyButton.textContent =
-                "Copy URL";
+            copyButton.textContent = "Copy URL";
         }, 1500);
 
     } catch (error) {
@@ -99,16 +119,15 @@ copyButton.addEventListener("click", async () => {
     }
 });
 
+
 // ─────────────────────────────────────────────
 // Open Overlay
 // ─────────────────────────────────────────────
 
 openButton.addEventListener("click", () => {
-    window.open(
-        overlayUrl,
-        "_blank"
-    );
+    window.open(getOverlayUrl(), "_blank");
 });
+
 
 // ─────────────────────────────────────────────
 // Media Status
@@ -116,35 +135,28 @@ openButton.addEventListener("click", () => {
 
 async function updateStatus() {
     try {
-        const response =
-            await fetch("/now-playing");
+        const response = await fetch("/now-playing");
+        const data = await response.json();
 
-        const data =
-            await response.json();
-
-        const hasTrack =
-            Boolean(data.title);
+        const hasTrack = Boolean(data.title);
 
         if (hasTrack) {
             statusDot.classList.add("connected");
 
-            statusText.textContent =
-                data.is_playing
-                    ? "Spotify connected"
-                    : "Spotify paused";
+            statusText.textContent = data.is_playing
+                ? "Spotify connected"
+                : "Spotify paused";
 
             track.textContent =
                 `${data.title} — ${data.artist || "Unknown artist"}`;
 
-        } else {
-            statusDot.classList.remove("connected");
-
-            statusText.textContent =
-                "Waiting for music";
-
-            track.textContent =
-                "Nothing playing";
+            return;
         }
+
+        statusDot.classList.remove("connected");
+
+        statusText.textContent = "Waiting for music";
+        track.textContent = "Nothing playing";
 
     } catch (error) {
         statusDot.classList.remove("connected");

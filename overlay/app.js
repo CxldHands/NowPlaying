@@ -37,7 +37,9 @@ async function fetchArtwork(data) {
     }
 
     try {
-        const response = await fetch("/artwork");
+        const response = await fetch(
+            `/artwork?v=${data.artwork_version}`
+        );
 
         if (!response.ok) {
             return null;
@@ -61,11 +63,6 @@ function updatePlaybackState(data) {
 
     currentState.isPlaying = data.is_playing;
 
-    console.log(
-        currentState.isPlaying
-            ? "Playback started"
-            : "Playback paused"
-    );
 }
 
 // ─────────────────────────────────────────────
@@ -80,20 +77,28 @@ async function updateNowPlaying() {
         if (hasTrackChanged(data)) {
             const artworkUrl = await fetchArtwork(data);
 
-            skin.updateTrack(data, artworkUrl);
+            skin.updateTrack(
+                data,
+                artworkUrl,
+                Boolean(data.title)
+            );
 
-            if (currentState.artworkUrl) {
-                URL.revokeObjectURL(currentState.artworkUrl);
+            if (artworkUrl) {
+                if (currentState.artworkUrl) {
+                    URL.revokeObjectURL(currentState.artworkUrl);
+                }
+
+                currentState.artworkUrl = artworkUrl;
             }
 
             currentState.title = data.title;
             currentState.artist = data.artist;
             currentState.artworkVersion = data.artwork_version;
-            currentState.artworkUrl = artworkUrl;
         }
 
         updatePlaybackState(data);
         skin.updateProgress(data);
+
     } catch (error) {
         console.error(
             "Could not connect to NowPlaying:",

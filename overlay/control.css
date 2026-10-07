@@ -1,3 +1,7 @@
+/* ─────────────────────────────────────────────
+   Base
+   ───────────────────────────────────────────── */
+
 * {
     box-sizing: border-box;
 }
@@ -22,66 +26,104 @@ body {
         sans-serif;
 }
 
-.container {
-    width: 460px;
 
-    padding: 36px;
+/* ─────────────────────────────────────────────
+   Container
+   ───────────────────────────────────────────── */
+
+.container {
+    width: 720px;
+    max-width: calc(100vw - 32px);
+
+    padding: 32px;
 
     border-radius: 24px;
 
     background: #1c1c1c;
 }
 
-.header h1 {
+
+/* ─────────────────────────────────────────────
+   Header
+   ───────────────────────────────────────────── */
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 24px;
+
+    padding-bottom: 24px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    min-width: 0;
+}
+
+.brand-mark {
+    width: 38px;
+    height: 38px;
+
+    display: block;
+
+    flex-shrink: 0;
+
+    border-radius: 11px;
+}
+
+.brand-text {
+    min-width: 0;
+}
+
+.brand-text h1 {
     margin: 0;
 
     font-size: 30px;
     font-weight: 600;
+
     letter-spacing: -0.5px;
 }
 
-.subtitle {
-    margin: 8px 0 0;
+.brand-text p {
+    margin: 4px 0 0;
 
     color: rgba(255, 255, 255, 0.5);
 
     font-size: 14px;
 }
 
-.welcome {
-    margin-top: 24px;
+.status-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
 
-    padding: 16px;
+    flex-shrink: 0;
 
-    border-radius: 14px;
-
-    background: #242424;
-}
-
-.welcome p {
-    margin: 0;
-
-    color: rgba(255, 255, 255, 0.65);
-
-    font-size: 13px;
-    line-height: 1.5;
+    text-align: right;
 }
 
 .status {
     display: flex;
     align-items: center;
-    gap: 8px;
 
-    margin-top: 24px;
+    gap: 7px;
 
-    font-size: 13px;
+    font-size: 12px;
 
-    color: rgba(255, 255, 255, 0.65);
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .status-dot {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
 
     flex-shrink: 0;
 
@@ -95,19 +137,59 @@ body {
 }
 
 .track {
-    margin-top: 8px;
+    max-width: 230px;
 
-    font-size: 13px;
+    margin-top: 4px;
 
-    color: rgba(255, 255, 255, 0.45);
+    font-size: 12px;
+
+    color: rgba(255, 255, 255, 0.4);
 
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
 
+
+/* ─────────────────────────────────────────────
+   Main Grid
+   ───────────────────────────────────────────── */
+
+.main-grid {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    margin-top: 28px;
+}
+
+.main-grid > .section {
+    padding-left: 24px;
+
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.main-grid > .preview-section {
+    padding-right: 24px;
+}
+
+
+/* ─────────────────────────────────────────────
+   Sections
+   ───────────────────────────────────────────── */
+
+.section,
+.preview-section {
+    min-width: 0;
+}
+
 .section {
     margin-top: 30px;
+}
+
+.main-grid > .section,
+.main-grid > .preview-section {
+    margin-top: 0;
 }
 
 .label {
@@ -118,18 +200,220 @@ body {
     color: rgba(255, 255, 255, 0.4);
 
     text-transform: uppercase;
+
     letter-spacing: 0.6px;
 }
 
-.steps {
+.main-grid + .section {
+    margin-top: 28px;
+
+    padding-top: 28px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ─────────────────────────────────────────────
+   Skin Preview
+   ───────────────────────────────────────────── */
+
+.preview {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    height: 220px;
+
+    padding: 10px;
+
+    border-radius: 16px;
+
+    background: #111;
+}
+
+.preview img {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+
+    border-radius: 10px;
+}
+
+
+/* ─────────────────────────────────────────────
+   Skin Selector
+   ───────────────────────────────────────────── */
+
+.skin-selector {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 10px;
+}
+
+.skin-selector label {
+    font-size: 13px;
+
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.skin-selector select {
+    min-width: 140px;
+
+    padding: 9px 12px;
+
+    border: 1px solid #333;
+    border-radius: 10px;
+
+    background: #111;
+    color: white;
+
+    font-family: inherit;
+    font-size: 13px;
+
+    cursor: pointer;
+}
+
+.skin-selector select:focus {
+    outline: none;
+
+    border-color: #555;
+}
+
+
+/* ─────────────────────────────────────────────
+   Overlay URL
+   ───────────────────────────────────────────── */
+
+.url-container {
+    display: flex;
+    align-items: center;
+
+    padding: 0 8px 0 14px;
+
+    border-radius: 12px;
+
+    background: #111;
+}
+
+.url {
+    flex: 1;
+
+    min-width: 0;
+
+    padding: 13px 0;
+
+    font-size: 13px;
+
+    color: rgba(255, 255, 255, 0.65);
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.icon-button {
+    width: 32px;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: transparent;
+
+    color: rgba(255, 255, 255, 0.45);
+
+    cursor: pointer;
+}
+
+.icon-button:hover {
+    background: #222;
+
+    color: white;
+}
+
+.icon-button svg {
+    width: 17px;
+    height: 17px;
+
+    fill: none;
+
+    stroke: currentColor;
+    stroke-width: 1.5;
+
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+
+/* ─────────────────────────────────────────────
+   Buttons
+   ───────────────────────────────────────────── */
+
+.buttons {
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 12px;
+}
+
+button:not(.icon-button) {
+    flex: 1;
+
+    padding: 12px;
+
+    border: 0;
+    border-radius: 12px;
+
+    background: white;
+    color: black;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+button:not(.icon-button).secondary {
+    background: #2a2a2a;
+
+    color: white;
+}
+
+button:not(.icon-button):hover {
+    opacity: 0.9;
+}
+
+
+/* ─────────────────────────────────────────────
+   Quick Setup
+   ───────────────────────────────────────────── */
+
+.steps {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
     gap: 16px;
 }
 
 .step {
     display: flex;
-    gap: 12px;
+
+    gap: 10px;
+
+    min-width: 0;
 }
 
 .step-number {
@@ -168,101 +452,10 @@ body {
     line-height: 1.4;
 }
 
-.url-container {
-    display: flex;
-    align-items: center;
 
-    padding: 0 8px 0 14px;
-
-    border-radius: 12px;
-
-    background: #111;
-}
-
-.url {
-    flex: 1;
-
-    padding: 13px 0;
-
-    font-size: 13px;
-
-    color: rgba(255, 255, 255, 0.65);
-
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.icon-button {
-    width: 32px;
-    height: 32px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    flex-shrink: 0;
-
-    border: 0;
-    border-radius: 8px;
-
-    background: transparent;
-
-    color: rgba(255, 255, 255, 0.45);
-
-    cursor: pointer;
-}
-
-.icon-button:hover {
-    background: #222;
-    color: white;
-}
-
-.icon-button svg {
-    width: 17px;
-    height: 17px;
-
-    fill: none;
-
-    stroke: currentColor;
-    stroke-width: 1.5;
-
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.buttons {
-    display: flex;
-    gap: 10px;
-
-    margin-top: 12px;
-}
-
-button:not(.icon-button) {
-    flex: 1;
-
-    padding: 12px;
-
-    border: 0;
-    border-radius: 12px;
-
-    background: white;
-    color: black;
-
-    font-size: 13px;
-    font-weight: 600;
-
-    cursor: pointer;
-}
-
-button:not(.icon-button).secondary {
-    background: #2a2a2a;
-    color: white;
-}
-
-button:not(.icon-button):hover {
-    opacity: 0.9;
-}
+/* ─────────────────────────────────────────────
+   Message
+   ───────────────────────────────────────────── */
 
 .message {
     min-height: 18px;
@@ -272,4 +465,48 @@ button:not(.icon-button):hover {
     font-size: 12px;
 
     color: rgba(255, 255, 255, 0.4);
+}
+
+
+/* ─────────────────────────────────────────────
+   Responsive
+   ───────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+
+    .container {
+        padding: 24px;
+    }
+
+    .header {
+        align-items: flex-start;
+    }
+
+    .status-section {
+        display: none;
+    }
+
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .main-grid > .preview-section {
+        padding-right: 0;
+    }
+
+    .main-grid > .section {
+        padding-left: 0;
+
+        border-left: 0;
+    }
+
+    .main-grid > .section {
+        padding-top: 24px;
+
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .steps {
+        grid-template-columns: 1fr;
+    }
 }

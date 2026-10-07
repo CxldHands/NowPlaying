@@ -7,7 +7,14 @@ const progress = document.getElementById("progress");
 const position = document.getElementById("position");
 const duration = document.getElementById("duration");
 
-function updateTrack(data, artworkUrl) {
+function updateTrack(data, artworkUrl, hasTrack) {
+    if (!hasTrack) {
+        title.textContent = "Waiting for music";
+        artist.textContent = "Start playing something";
+        albumArt.removeAttribute("src");
+        return;
+    }
+    
     const trackChanged =
         data.title !== currentState.title ||
         data.artist !== currentState.artist;

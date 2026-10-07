@@ -99,48 +99,6 @@ pub async fn start_smtc(
                                         }
                                     }
                                 }
-
-                                // Debug output so we can see what the application
-                                // is receiving while developing.
-                                let current = state.lock().await;
-
-                                println!("\n--- Now Playing ---");
-
-                                if let Some(title) = &current.title {
-                                    println!("Song:   {title}");
-                                }
-
-                                if let Some(artist) = &current.artist {
-                                    println!("Artist: {artist}");
-                                }
-
-                                if let Some(album) = &current.album {
-                                    println!("Album:  {album}");
-                                }
-
-                                println!(
-                                    "Status: {}",
-                                    if current.is_playing {
-                                        "Playing"
-                                    } else {
-                                        "Paused"
-                                    }
-                                );
-
-                                println!("Position: {}ms", current.current_position_ms());
-                                println!("Duration: {}ms", current.duration_ms);
-
-                                if let Some(artwork_type) = &current.artwork_type {
-                                    let size = current
-                                        .artwork
-                                        .as_ref()
-                                        .map(|data| data.len())
-                                        .unwrap_or(0);
-
-                                    println!(
-                                        "Artwork: {artwork_type} ({size} bytes)"
-                                    );
-                                }
                             }
 
                             println!("Session {session_id} ended.");

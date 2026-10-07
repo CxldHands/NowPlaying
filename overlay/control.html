@@ -3,174 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>NowPlaying</title>
-
+    <link rel="icon" href="/favicon.svg">
     <link rel="stylesheet" href="/control.css">
 </head>
-
 <body>
-
     <main class="container">
 
         <!-- ─────────────────────────────────────────────
              Header
              ───────────────────────────────────────────── -->
-
+             
         <header class="header">
-            <h1>NowPlaying</h1>
-
-            <p class="subtitle">
-                Your music. On your stream.
-            </p>
+            <div class="brand">
+                <img
+                    class="brand-mark"
+                    src="/favicon.svg"
+                    alt=""
+                >
+                <div class="brand-text">
+                    <h1>NowPlaying</h1>
+                    <p>
+                        Your music. On your stream.
+                    </p>
+                </div>
+            </div>
+            <div class="status-section">
+                <div class="status">
+                    <span
+                        id="status-dot"
+                        class="status-dot"
+                    ></span>
+                    <span id="status-text">
+                        Checking media...
+                    </span>
+                </div>
+                <div
+                    id="track"
+                    class="track"
+                >
+                    Nothing playing
+                </div>
+            </div>
         </header>
 
         <!-- ─────────────────────────────────────────────
-             Welcome
+             Main Controls
              ───────────────────────────────────────────── -->
 
-        <section class="welcome">
-            <p>
-                Welcome to NowPlaying.
-                Your currently playing music will
-                automatically appear in OBS.
-            </p>
-        </section>
+        <div class="main-grid">
 
-        <!-- ─────────────────────────────────────────────
-             Connection Status
-             ───────────────────────────────────────────── -->
+            <!-- ─────────────────────────────────────────
+                 Skin Preview
+                 ───────────────────────────────────────── -->
 
-        <div class="status">
-            <div id="status-dot" class="status-dot"></div>
+            <section class="preview-section">
+                <div class="label">
+                    Skin Preview
+                </div>
+                <div class="preview">
+                    <img
+                        id="skin-preview"
+                        src="/assets/previews/default.webp"
+                        alt="Default skin preview"
+                    >
+                </div>
+            </section>
 
-            <span id="status-text">
-                Checking media...
-            </span>
+            <!-- ─────────────────────────────────────────
+                 OBS Overlay
+                 ───────────────────────────────────────── -->
+
+            <section class="section">
+                <div class="label">
+                    OBS Overlay
+                </div>
+                <!-- Skin Selection -->
+                <div class="skin-selector">
+                    <label for="skin-select">
+                        Skin
+                    </label>
+                    <select id="skin-select">
+                        <option value="default">
+                            Default
+                        </option>
+                        <option value="ambient">
+                            Ambient
+                        </option>
+                    </select>
+                </div>
+                <!-- Overlay URL -->
+                <div class="url-container">
+                    <div
+                        id="overlay-url"
+                        class="url"
+                    >
+                        localhost:3000/••••••
+                    </div>
+                    <button
+                        id="visibility-button"
+                        class="icon-button"
+                        aria-label="Show overlay URL"
+                        title="Show overlay URL"
+                    >
+                        <svg
+                            id="eye-icon"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                        >
+                            <path
+                                d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"
+                            />
+                            <circle
+                                cx="12"
+                                cy="12"
+                                r="2.5"
+                            />
+                        </svg>
+                    </button>
+                </div>
+                <!-- Buttons -->
+                <div class="buttons">
+                    <button id="copy-button">
+                        Copy URL
+                    </button>
+                    <button
+                        id="open-button"
+                        class="secondary"
+                    >
+                        Open Overlay
+                    </button>
+                </div>
+                <div
+                    id="message"
+                    class="message"
+                ></div>
+            </section>
         </div>
 
-        <div id="track" class="track">
-            Nothing playing
-        </div>
-
         <!-- ─────────────────────────────────────────────
-             Setup Instructions
+             Quick Setup
              ───────────────────────────────────────────── -->
 
         <section class="section">
-
             <div class="label">
                 Quick Setup
             </div>
-
             <div class="steps">
-
                 <div class="step">
-                    <div class="step-number">1</div>
-
+                    <div class="step-number">
+                        1
+                    </div>
                     <div>
-                        <strong>Add the overlay to OBS</strong>
-
+                        <strong>
+                            Add the overlay to OBS
+                        </strong>
                         <p>
-                            Add a Browser Source in OBS and
-                            use the overlay URL below.
+                            Add a Browser Source and
+                            use the overlay URL.
                         </p>
                     </div>
                 </div>
-
                 <div class="step">
-                    <div class="step-number">2</div>
-
+                    <div class="step-number">
+                        2
+                    </div>
                     <div>
-                        <strong>Set the Browser Source size</strong>
-
+                        <strong>
+                            Set the Browser Source size
+                        </strong>
                         <p>
-                            Set the Browser Source to
-                            <strong>380 x 460 px</strong>
-                            You can adjust it later to fit your stream layout.
+                            Use the recommended size
+                            for your selected skin.
                         </p>
                     </div>
                 </div>
-
                 <div class="step">
-                    <div class="step-number">3</div>
-
+                    <div class="step-number">
+                        3
+                    </div>
                     <div>
-                        <strong>Start playing music</strong>
-
+                        <strong>
+                            Start playing music
+                        </strong>
                         <p>
-                            That's it. NowPlaying handles
-                            the rest automatically.
+                            NowPlaying handles the rest
+                            automatically.
                         </p>
                     </div>
                 </div>
-
             </div>
-
         </section>
-
-        <!-- ─────────────────────────────────────────────
-             OBS Overlay
-             ───────────────────────────────────────────── -->
-
-        <section class="section">
-
-            <div class="label">
-                OBS Overlay
-            </div>
-
-            <div class="url-container">
-
-                <div id="overlay-url" class="url">
-                    localhost:3000/••••••
-                </div>
-
-                <button
-                    id="visibility-button"
-                    class="icon-button"
-                    aria-label="Show overlay URL"
-                    title="Show overlay URL"
-                >
-                    <svg
-                        id="eye-icon"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                    >
-                        <path
-                            d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"
-                        />
-                        <circle
-                            cx="12"
-                            cy="12"
-                            r="2.5"
-                        />
-                    </svg>
-                </button>
-
-            </div>
-
-            <div class="buttons">
-
-                <button id="copy-button">
-                    Copy URL
-                </button>
-
-                <button
-                    id="open-button"
-                    class="secondary"
-                >
-                    Open Overlay
-                </button>
-
-            </div>
-
-            <div id="message" class="message"></div>
-
-        </section>
-
     </main>
-
     <script src="/control.js"></script>
-
 </body>
 </html>

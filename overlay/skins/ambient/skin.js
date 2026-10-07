@@ -18,10 +18,11 @@ const duration = document.getElementById("duration");
 // Track
 // ─────────────────────────────────────────────
 
-function updateTrack(data, artworkUrl) {
-    // First render.
-    if (!title.textContent || title.textContent === "Song Title") {
-        renderTrack(data, artworkUrl);
+function updateTrack(data, artworkUrl, hasTrack) {
+    if (!hasTrack) {
+        title.textContent = "Waiting for music";
+        artist.textContent = "Start playing something";
+        albumArt.removeAttribute("src");
         return;
     }
 
