@@ -4,9 +4,14 @@
 
 const skinSelect = document.getElementById("skin-select");
 const skinPreview = document.getElementById("skin-preview");
+const skinSettings = {
+    default: {width: 400, height: 520, preview: "/assets/previews/default.webp"},
+    ambient: {width: 470, height: 140, preview: "/assets/previews/ambient.webp"},
+};
 
 const urlElement = document.getElementById("overlay-url");
 const visibilityButton = document.getElementById("visibility-button");
+const browserSize = document.getElementById("browser-size");
 const copyButton = document.getElementById("copy-button");
 const openButton = document.getElementById("open-button");
 const message = document.getElementById("message");
@@ -43,7 +48,7 @@ function updateUrlVisibility() {
         return;
     }
 
-    urlElement.textContent = "localhost:3000/••••••";
+    urlElement.textContent = "••••••••••••••••••••";
 
     visibilityButton.setAttribute(
         "aria-label",
@@ -62,11 +67,8 @@ function updateUrlVisibility() {
 // ─────────────────────────────────────────────
 
 function updateSkinPreview() {
-    skinPreview.src =
-        `/assets/previews/${skinSelect.value}.webp`;
-
-    skinPreview.alt =
-        `${skinSelect.value} skin preview`;
+    skinPreview.src = skinSettings[skinSelect.value].preview;
+    skinPreview.alt = `${skinSelect.value} skin preview`;
 }
 
 
@@ -78,8 +80,20 @@ skinSelect.addEventListener("change", () => {
     urlVisible = false;
 
     updateUrlVisibility();
+    updateBrowserSize();
     updateSkinPreview();
 });
+
+
+// ─────────────────────────────────────────────
+// Browser Source Size
+// ─────────────────────────────────────────────
+
+function updateBrowserSize() {
+    const { width, height } = skinSettings[skinSelect.value];
+
+    browserSize.textContent = `${width} × ${height} px`;
+}
 
 
 // ─────────────────────────────────────────────
@@ -93,7 +107,7 @@ visibilityButton.addEventListener("click", () => {
 });
 
 updateUrlVisibility();
-updateSkinPreview();
+updateBrowserSize();
 
 
 // ─────────────────────────────────────────────
@@ -111,6 +125,7 @@ copyButton.addEventListener("click", async () => {
 
         setTimeout(() => {
             copyButton.textContent = "Copy URL";
+            message.textContent = "";
         }, 1500);
 
     } catch (error) {

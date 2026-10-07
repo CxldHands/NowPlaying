@@ -38,7 +38,7 @@ body {
 .now-playing-card {
     position: relative;
 
-    width: 500px;
+    width: 450px;
     height: 120px;
 
     padding: 15px;
@@ -80,7 +80,7 @@ body {
 
     transform: scale(1.15);
 
-    filter: blur(24px);
+    filter: blur(16px);
 }
 
 /* ─────────────────────────────────────────────
@@ -150,7 +150,7 @@ body {
 .track-info h1 {
     margin: 0;
 
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 600;
     line-height: 1.2;
 
@@ -162,7 +162,7 @@ body {
 .track-info p {
     margin: 5px 0 0;
 
-    font-size: 17px;
+    font-size: 20px;
     line-height: 1.2;
 
     color: rgba(255, 255, 255, 0.75);
@@ -208,7 +208,7 @@ body {
 
     margin-top: 5px;
 
-    font-size: 14px;
+    font-size: 18px;
     font-weight: 500;
 
     color: rgba(255, 255, 255, 0.65);

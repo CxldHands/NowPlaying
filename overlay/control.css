@@ -250,7 +250,8 @@ body {
 .skin-selector {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+
+    gap: 10px;
 
     margin-bottom: 10px;
 }
@@ -258,18 +259,18 @@ body {
 .skin-selector label {
     font-size: 13px;
 
-    color: rgba(255, 255, 255, 0.65);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .skin-selector select {
-    min-width: 140px;
+    min-width: 120px;
 
-    padding: 9px 12px;
+    padding: 5px 10px;
 
     border: 1px solid #333;
-    border-radius: 10px;
+    border-radius: 8px;
 
-    background: #111;
+    background: #161616;
     color: white;
 
     font-family: inherit;
@@ -278,10 +279,38 @@ body {
     cursor: pointer;
 }
 
+.skin-selector select:hover {
+    border-color: #444;
+}
+
 .skin-selector select:focus {
     outline: none;
 
     border-color: #555;
+}
+
+
+/* ─────────────────────────────────────────────
+   Recommended Size
+   ───────────────────────────────────────────── */
+
+   .recommended-size {
+    display: flex;
+    align-items: baseline;
+
+    gap: 4px;
+
+    margin-bottom: 10px;
+
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.recommended-size strong {
+    font-size: 11px;
+    font-weight: 600;
+
+    color: rgba(255, 255, 255, 0.65);
 }
 
 
@@ -305,7 +334,7 @@ body {
 
     min-width: 0;
 
-    padding: 13px 0;
+    padding: 9px 0;
 
     font-size: 13px;
 
@@ -362,24 +391,23 @@ body {
 
 .buttons {
     display: flex;
+    justify-content: flex-end;
 
-    gap: 10px;
+    gap: 8px;
 
     margin-top: 12px;
 }
 
 button:not(.icon-button) {
-    flex: 1;
-
-    padding: 12px;
+    padding: 8px 12px;
 
     border: 0;
-    border-radius: 12px;
+    border-radius: 8px;
 
     background: white;
     color: black;
 
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
 
     cursor: pointer;
