@@ -1,12 +1,10 @@
-// ─────────────────────────────────────────────
-// Elements
-// ─────────────────────────────────────────────
+ // ─────────────────────────────────────────────
+ // Elements
+ // ─────────────────────────────────────────────
 
-const trackContent = document.querySelector(".track-content");
-
+const trackContent = document.getElementById("track-content");
 const title = document.getElementById("title");
 const artist = document.getElementById("artist");
-
 const albumArt = document.getElementById("album-art");
 const backgroundArt = document.getElementById("background-art");
 
@@ -23,27 +21,53 @@ function updateTrack(data, artworkUrl, hasTrack) {
         title.textContent = "Waiting for music";
         artist.textContent = "Start playing something";
         albumArt.removeAttribute("src");
+        backgroundArt.removeAttribute("src");
+
+        return;
+    }
+
+    const trackChanged =
+        data.title !== currentState.title ||
+        data.artist !== currentState.artist;
+
+    if (!trackChanged) {
+        // Artwork may change independently of track metadata.
+        if (artworkUrl) {
+            albumArt.src = artworkUrl;
+        } else {
+            albumArt.removeAttribute("src");
+        }
+
         return;
     }
 
     // Animate the current track out.
     gsap.to(trackContent, {
         opacity: 0,
-        x: -30,
-        duration: 0.2,
+        x: -40,
+        duration: 0.25,
         ease: "power2.in",
 
         onComplete: () => {
-            renderTrack(data, artworkUrl);
+            title.textContent = data.title ?? "No song playing";
+            artist.textContent = data.artist ?? "—";
+
+            if (artworkUrl) {
+                albumArt.src = artworkUrl;
+                backgroundArt.src = artworkUrl;
+            } else {
+                albumArt.removeAttribute("src");
+                backgroundArt.removeAttribute("src");
+            }
 
             gsap.set(trackContent, {
-                x: 30,
+                x: 40,
             });
 
             gsap.to(trackContent, {
                 opacity: 1,
                 x: 0,
-                duration: 0.3,
+                duration: 0.35,
                 ease: "power2.out",
             });
         },
@@ -51,42 +75,23 @@ function updateTrack(data, artworkUrl, hasTrack) {
 }
 
 // ─────────────────────────────────────────────
-// Track Rendering
-// ─────────────────────────────────────────────
-
-function renderTrack(data, artworkUrl) {
-    title.textContent = data.title ?? "No song playing";
-    artist.textContent = data.artist ?? "—";
-
-    if (artworkUrl) {
-        albumArt.src = artworkUrl;
-        backgroundArt.src = artworkUrl;
-    }
-}
-
-// ─────────────────────────────────────────────
 // Playback
 // ─────────────────────────────────────────────
 
 function updateProgress(data) {
-    position.textContent = formatTime(data.position_ms);
-    duration.textContent = formatTime(data.duration_ms);
+    const positionMs = Math.max(0, data.position_ms);
+    const durationMs = Math.max(0, data.duration_ms);
 
-    if (data.duration_ms <= 0) {
-        gsap.set(progress, {
-            width: "0%",
-        });
+    position.textContent = formatTime(positionMs);
+    duration.textContent = formatTime(durationMs);
 
-        return;
-    }
+    const percentage = durationMs > 0
+        ? Math.min(100, (positionMs / durationMs) * 100)
+        : 0;
 
-    const percentage =
-        (data.position_ms / data.duration_ms) * 100;
-
-    gsap.to(progress, {
+    // Shared app.js handles playback interpolation.
+    gsap.set(progress, {
         width: `${percentage}%`,
-        duration: 0.1,
-        ease: "none",
     });
 }
 

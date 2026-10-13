@@ -118,9 +118,7 @@ copyButton.addEventListener("click", async () => {
     try {
         await navigator.clipboard.writeText(getOverlayUrl());
 
-        message.textContent =
-            "Overlay URL copied to clipboard.";
-
+        message.textContent = "Overlay URL copied to clipboard.";
         copyButton.textContent = "Copied!";
 
         setTimeout(() => {
@@ -129,8 +127,7 @@ copyButton.addEventListener("click", async () => {
         }, 1500);
 
     } catch (error) {
-        message.textContent =
-            "Could not copy the URL.";
+        message.textContent = "Could not copy the URL.";
     }
 });
 
@@ -162,25 +159,19 @@ async function updateStatus() {
                 ? "Spotify connected"
                 : "Spotify paused";
 
-            track.textContent =
-                `${data.title} — ${data.artist || "Unknown artist"}`;
+            track.textContent = `${data.title} — ${data.artist || "Unknown artist"}`;
 
             return;
         }
 
         statusDot.classList.remove("connected");
-
         statusText.textContent = "Waiting for music";
         track.textContent = "Nothing playing";
 
     } catch (error) {
         statusDot.classList.remove("connected");
-
-        statusText.textContent =
-            "NowPlaying is not responding";
-
-        track.textContent =
-            "Unable to read media";
+        statusText.textContent = "NowPlaying is not responding";
+        track.textContent = "Unable to read media";
     }
 }
 

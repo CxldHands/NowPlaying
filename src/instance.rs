@@ -6,17 +6,8 @@ use windows_sys::Win32::{
 };
 
 const INSTANCE_NAME: &[u16] = &[
-    'N' as u16,
-    'o' as u16,
-    'w' as u16,
-    'P' as u16,
-    'l' as u16,
-    'a' as u16,
-    'y' as u16,
-    'i' as u16,
-    'n' as u16,
-    'g' as u16,
-    0,
+    'N' as u16, 'o' as u16, 'w' as u16, 'P' as u16, 'l' as u16, 'a' as u16, 'y' as u16, 'i' as u16,
+    'n' as u16, 'g' as u16, 0,
 ];
 
 pub struct InstanceGuard {

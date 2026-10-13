@@ -10,7 +10,7 @@ use server::start_server;
 use smtc::start_smtc;
 use state::NowPlayingState;
 use std::sync::Arc;
-use tokio::sync::{watch, Mutex};
+use tokio::sync::{Mutex, watch};
 
 #[tokio::main]
 async fn main() {
@@ -37,7 +37,23 @@ async fn main() {
     // Local HTTP Server
     // ─────────────────────────────────────────────
 
-    tokio::spawn(start_server(Arc::clone(&state),shutdown_rx.clone(),));
+    let server_shutdown_tx = shutdown_tx.clone();
+
+    let server_task = tokio::spawn(start_server(Arc::clone(&state), shutdown_rx.clone()));
+
+    tokio::spawn(async move {
+        match server_task.await {
+            Ok(Ok(())) => {}
+            Ok(Err(error)) => {
+                eprintln!("HTTP server failed: {error}");
+                let _ = server_shutdown_tx.send(true);
+            }
+            Err(error) => {
+                eprintln!("HTTP server task failed: {error}");
+                let _ = server_shutdown_tx.send(true);
+            }
+        }
+    });
 
     // ─────────────────────────────────────────────
     // Windows SMTC

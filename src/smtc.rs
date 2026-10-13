@@ -1,6 +1,6 @@
 use gsmtc::{ManagerEvent, SessionManager};
 use std::sync::Arc;
-use tokio::sync::{watch, Mutex};
+use tokio::sync::{Mutex, watch};
 
 use crate::state::NowPlayingState;
 
@@ -8,10 +8,6 @@ use crate::state::NowPlayingState;
 // Configuration
 // ─────────────────────────────────────────────
 
-// Only media sources in this list are allowed to update our state.
-//
-// For now we're only supporting Spotify.
-// Other apps such as Chrome or VLC will be ignored.
 const ALLOWED_SOURCES: &[&str] = &["Spotify.exe"];
 
 // ─────────────────────────────────────────────
@@ -35,6 +31,7 @@ pub async fn start_smtc(
                         mut rx,
                         source,
                     } => {
+                        let session_key = session_id.to_string();
                         let allowed = ALLOWED_SOURCES.contains(&source.as_str());
 
                         println!(
@@ -42,71 +39,109 @@ pub async fn start_smtc(
                             if allowed { "Accepted" } else { "Ignoring" }
                         );
 
+                        // Register the newly accepted session.
+                        if allowed {
+                            let mut current = state.lock().await;
+
+                            current.clear();
+                            current.active_session_id = Some(session_key.clone());
+                        }
+
                         let state = Arc::clone(&state);
 
                         tokio::spawn(async move {
                             while let Some(update) = rx.recv().await {
-                                // We still consume events from ignored sessions,
-                                // but they are not allowed to modify our state.
                                 if !allowed {
                                     continue;
                                 }
 
+                                let mut current = state.lock().await;
+
+                                // Ignore updates from sessions that no longer
+                                // own the displayed playback state.
+                                if current.active_session_id.as_deref()
+                                    != Some(session_key.as_str())
                                 {
-                                    let mut current = state.lock().await;
+                                    continue;
+                                }
 
-                                    match update {
-                                        gsmtc::SessionUpdateEvent::Model(model) => {
-                                            if let Some(media) = model.media {
-                                                current.title = Some(media.title);
-                                                current.artist = Some(media.artist);
-                                                current.album =
-                                                    media.album.map(|album| album.title);
-                                            }
-
-                                            if let Some(playback) = model.playback {
-                                                current.is_playing = matches!(
-                                                    playback.status,
-                                                    gsmtc::PlaybackStatus::Playing
-                                                );
-                                            }
-
-                                            if let Some(timeline) = model.timeline {
-                                                current.position_ms = timeline.position / 10_000;
-                                                current.duration_ms = timeline.end / 10_000;
-
-                                                if current.is_playing {
-                                                    current.position_anchor = Some(std::time::Instant::now());
-                                                } else {
-                                                    current.position_anchor = None;
-                                                }
-                                            }
+                                match update {
+                                    gsmtc::SessionUpdateEvent::Model(model) => {
+                                        if let Some(media) = model.media {
+                                            current.title = Some(media.title);
+                                            current.artist = Some(media.artist);
+                                            current.album = media.album.map(|album| album.title);
                                         }
 
-                                        gsmtc::SessionUpdateEvent::Media(model, image) => {
-                                            if let Some(media) = model.media {
-                                                current.title = Some(media.title);
-                                                current.artist = Some(media.artist);
-                                                current.album =
-                                                    media.album.map(|album| album.title);
-                                            }
+                                        if let Some(playback) = model.playback {
+                                            let is_playing = matches!(
+                                                playback.status,
+                                                gsmtc::PlaybackStatus::Playing
+                                            );
 
-                                            if let Some(image) = image {
+                                            current.set_playing(is_playing);
+                                        }
+
+                                        if let Some(timeline) = model.timeline {
+                                            // Convert 100-nanosecond ticks to milliseconds.
+                                            current.position_ms = timeline.position.saturating_sub(timeline.start).max(0) / 10_000;
+                                            current.duration_ms = timeline.end.saturating_sub(timeline.start).max(0) / 10_000;
+
+                                            current.position_anchor = if current.is_playing {
+                                                Some(std::time::Instant::now())
+                                            } else {
+                                                None
+                                            };
+                                        }
+                                    }
+
+                                    gsmtc::SessionUpdateEvent::Media(model, image) => {
+                                        if let Some(media) = model.media {
+                                            current.title = Some(media.title);
+                                            current.artist = Some(media.artist);
+                                            current.album = media.album.map(|album| album.title);
+                                        }
+
+                                        match image {
+                                            Some(image) => {
                                                 current.artwork = Some(image.data);
                                                 current.artwork_type = Some(image.content_type);
-                                                current.artwork_version += 1;
+                                            }
+                                            None => {
+                                                current.artwork = None;
+                                                current.artwork_type = None;
                                             }
                                         }
+
+                                        current.artwork_version += 1;
                                     }
                                 }
                             }
 
-                            println!("Session {session_id} ended.");
+                            // Clear state only if this session still owns it.
+                            let mut current = state.lock().await;
+
+                            if current.active_session_id.as_deref()
+                                == Some(session_key.as_str())
+                            {
+                                current.clear();
+                            }
+
+                            println!("Session {session_key} ended.");
                         });
                     }
 
                     ManagerEvent::SessionRemoved { session_id } => {
-                        println!("Session removed: {session_id}");
+                        let session_key = session_id.to_string();
+                        let mut current = state.lock().await;
+
+                        if current.active_session_id.as_deref()
+                            == Some(session_key.as_str())
+                        {
+                            current.clear();
+                        }
+
+                        println!("Session removed: {session_key}");
                     }
 
                     ManagerEvent::CurrentSessionChanged { session_id } => {

@@ -41,14 +41,12 @@ impl ApplicationHandler for TrayApplication {
         let open_item = MenuItem::new("Open NowPlaying", true, None);
         let quit_item = MenuItem::new("Quit", true, None);
 
-        menu.append(&open_item)
-            .expect("Failed to add menu item");
+        menu.append(&open_item).expect("Failed to add menu item");
 
         menu.append(&PredefinedMenuItem::separator())
             .expect("Failed to add separator");
 
-        menu.append(&quit_item)
-            .expect("Failed to add menu item");
+        menu.append(&quit_item).expect("Failed to add menu item");
 
         self.tray = Some(
             TrayIconBuilder::new()
@@ -100,6 +98,5 @@ fn create_icon() -> Icon {
 
     let rgba = include_bytes!("../overlay/assets/trayicon.rgba").to_vec();
 
-    Icon::from_rgba(rgba, width, height)
-        .expect("Failed to create tray icon")
+    Icon::from_rgba(rgba, width, height).expect("Failed to create tray icon")
 }

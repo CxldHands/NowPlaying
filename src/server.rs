@@ -1,13 +1,14 @@
 use axum::{
-    extract::{Query, State},
-    http::StatusCode,
-    response::IntoResponse,
-    routing::get,
     Router,
+    extract::{Query, Request, State},
+    http::{StatusCode, header::HOST},
+    middleware::{self, Next},
+    response::{IntoResponse, Response},
+    routing::get,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tokio::sync::{watch, Mutex};
+use tokio::sync::{Mutex, watch};
 
 use crate::state::NowPlayingState;
 
@@ -70,10 +71,7 @@ async fn overlay(Query(query): Query<OverlayQuery>) -> impl IntoResponse {
         _ => include_str!("../overlay/skins/default/index.html"),
     };
 
-    (
-        [("Content-Type", "text/html; charset=utf-8")],
-        html,
-    )
+    ([("Content-Type", "text/html; charset=utf-8")], html)
 }
 
 // ─────────────────────────────────────────────
@@ -116,20 +114,14 @@ async fn ambient_script() -> impl IntoResponse {
 // Preview Assets
 // ─────────────────────────────────────────────
 
-async fn default_preview_art() -> (
-    [(&'static str, &'static str); 1],
-    &'static [u8],
-) {
+async fn default_preview_art() -> ([(&'static str, &'static str); 1], &'static [u8]) {
     (
         [("Content-Type", "image/webp")],
         include_bytes!("../overlay/assets/previews/default.webp"),
     )
 }
 
-async fn ambient_preview_art() -> (
-    [(&'static str, &'static str); 1],
-    &'static [u8],
-) {
+async fn ambient_preview_art() -> ([(&'static str, &'static str); 1], &'static [u8]) {
     (
         [("Content-Type", "image/webp")],
         include_bytes!("../overlay/assets/previews/ambient.webp"),
@@ -172,9 +164,7 @@ async fn favicon() -> impl IntoResponse {
 // Now Playing API
 // ─────────────────────────────────────────────
 
-async fn now_playing(
-    State(state): State<AppState>,
-) -> impl IntoResponse {
+async fn now_playing(State(state): State<AppState>) -> impl IntoResponse {
     let current = state.lock().await;
 
     let response = NowPlayingResponse {
@@ -194,9 +184,7 @@ async fn now_playing(
 // Artwork API
 // ─────────────────────────────────────────────
 
-async fn artwork(
-    State(state): State<AppState>,
-) -> impl IntoResponse {
+async fn artwork(State(state): State<AppState>) -> impl IntoResponse {
     let current = state.lock().await;
 
     let Some(data) = current.artwork.as_ref() else {
@@ -225,6 +213,20 @@ async fn artwork(
         .into_response()
 }
 
+/// Reject requests addressed to unexpected hostnames.
+async fn validate_host(request: Request, next: Next) -> Response {
+    let host = request
+        .headers()
+        .get(HOST)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_ascii_lowercase);
+
+    match host.as_deref() {
+        Some("localhost:3000" | "127.0.0.1:3000") => next.run(request).await,
+        _ => StatusCode::BAD_REQUEST.into_response(),
+    }
+}
+
 // ─────────────────────────────────────────────
 // Server
 // ─────────────────────────────────────────────
@@ -232,49 +234,35 @@ async fn artwork(
 pub async fn start_server(
     state: AppState,
     mut shutdown_rx: watch::Receiver<bool>,
-) {
+) -> Result<(), std::io::Error> {
     let app = Router::new()
         // Control page
         .route("/", get(control))
         .route("/control.css", get(control_style))
         .route("/control.js", get(control_script))
-
         // Overlay
         .route("/overlay", get(overlay))
-
         // Default skin
         .route("/skins/default/style.css", get(default_style))
         .route("/skins/default/skin.js", get(default_script))
-
         // Ambient skin
         .route("/skins/ambient/style.css", get(ambient_style))
         .route("/skins/ambient/skin.js", get(ambient_script))
-
         // Preview assets
-        .route(
-            "/assets/previews/default.webp",
-            get(default_preview_art),
-        )
-        .route(
-            "/assets/previews/ambient.webp",
-            get(ambient_preview_art),
-        )
-
+        .route("/assets/previews/default.webp", get(default_preview_art))
+        .route("/assets/previews/ambient.webp", get(ambient_preview_art))
         // Shared assets
         .route("/app.js", get(app_script))
         .route("/utils.js", get(utils))
         .route("/gsap.min.js", get(gsap))
         .route("/favicon.svg", get(favicon))
-
         // API
         .route("/now-playing", get(now_playing))
         .route("/artwork", get(artwork))
+        .with_state(state)
+        .layer(middleware::from_fn(validate_host));
 
-        .with_state(state);
-
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
-        .await
-        .expect("Failed to bind local HTTP server");
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
 
     println!("HTTP server running at http://localhost:3000");
 
@@ -283,6 +271,7 @@ pub async fn start_server(
             let _ = shutdown_rx.changed().await;
             println!("HTTP server shutting down.");
         })
-        .await
-        .expect("HTTP server failed");
+        .await?;
+
+    Ok(())
 }
