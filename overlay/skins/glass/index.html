@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Now Playing - Glass</title>
+    <link rel="icon" href="/favicon.svg">
+    <link rel="stylesheet" href="/skins/glass/style.css">
+</head>
+<body>
+    <main class="glass-card" id="glass-card">
+        <div class="glass-content" id="track-content">
+            <div class="artwork-frame">
+                <img id="album-art" class="album-art" src="" alt="Album artwork">
+            </div>
+            <section class="track-info">
+                <h1 id="title">Waiting for music</h1>
+                <p id="artist">Start playing something</p>
+            </section>
+        </div>
+
+        <svg class="perimeter" viewBox="0 0 420 180" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+                <linearGradient id="aura-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#8be9ff"/>
+                    <stop offset="48%" stop-color="#a7baff"/>
+                    <stop offset="100%" stop-color="#d6a7ff"/>
+                </linearGradient>
+                <filter id="aura-blur" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3"/>
+                </filter>
+            </defs>
+            <rect class="perimeter-track" x="2" y="2" width="416" height="176" rx="25" pathLength="1000"/>
+            <rect id="progress" class="perimeter-aura aura-glow" x="2" y="2" width="416" height="176" rx="25" pathLength="1000" stroke-dasharray="1000 1000" stroke-dashoffset="1000" filter="url(#aura-blur)"/>
+            <rect class="perimeter-aura aura-core" x="2" y="2" width="416" height="176" rx="25" pathLength="1000" stroke-dasharray="1000 1000" stroke-dashoffset="1000"/>
+        </svg>
+    </main>
+
+    <script src="/gsap.min.js"></script>
+    <script src="/utils.js"></script>
+    <script src="/skins/glass/skin.js"></script>
+    <script src="/app.js"></script>
+</body>
+</html>

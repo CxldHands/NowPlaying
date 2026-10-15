@@ -7,6 +7,7 @@ const skinPreview = document.getElementById("skin-preview");
 const skinSettings = {
     default: {width: 400, height: 520, preview: "/assets/previews/default.webp"},
     ambient: {width: 470, height: 140, preview: "/assets/previews/ambient.webp"},
+    glass: {width: 440, height: 200, preview: "/assets/previews/glass.webp"},
 };
 
 const urlElement = document.getElementById("overlay-url");
