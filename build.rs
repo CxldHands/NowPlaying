@@ -4,6 +4,14 @@ fn main() {
 
         res.set_icon("overlay/assets/appicon.ico");
 
+        res.set("ProductName", "NowPlaying");
+        res.set("FileDescription", "NowPlaying - Stream Music Overlay");
+        res.set("CompanyName", "NowPlaying");
+        res.set("LegalCopyright", "Copyright © 2026 NowPlaying");
+
+        res.set("FileVersion", "0.3.0.0");
+        res.set("ProductVersion", "0.3.0.0");
+
         res.compile().expect("Failed to compile Windows resources");
     }
 }
