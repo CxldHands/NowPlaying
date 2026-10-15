@@ -125,6 +125,11 @@ function updatePlaybackState(data) {
     currentState.positionAnchorTime = now;
     currentState.isPlaying = isPlaying;
 
+    // Skins may optionally react to play/pause without owning a playback clock.
+    if (typeof skin.updatePlaybackState === "function") {
+        skin.updatePlaybackState({ is_playing: isPlaying });
+    }
+
     if (isPlaying) {
         startProgressAnimation();
     } else {

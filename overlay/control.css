@@ -206,7 +206,7 @@ body {
 }
 
 .label::before {
-    content: "//";
+    content: "/////";
     color: var(--accent-text);
     font: 700 11px var(--mono);
 }

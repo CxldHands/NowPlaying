@@ -68,6 +68,7 @@ async fn overlay(Query(query): Query<OverlayQuery>) -> impl IntoResponse {
 
     let html = match skin {
         "ambient" => include_str!("../overlay/skins/ambient/index.html"),
+        "glass" => include_str!("../overlay/skins/glass/index.html"),
         _ => include_str!("../overlay/skins/default/index.html"),
     };
 
@@ -111,6 +112,24 @@ async fn ambient_script() -> impl IntoResponse {
 }
 
 // ─────────────────────────────────────────────
+// Glass Skin
+// ─────────────────────────────────────────────
+
+async fn glass_style() -> impl IntoResponse {
+    (
+        [("Content-Type", "text/css; charset=utf-8")],
+        include_str!("../overlay/skins/glass/style.css"),
+    )
+}
+
+async fn glass_script() -> impl IntoResponse {
+    (
+        [("Content-Type", "application/javascript; charset=utf-8")],
+        include_str!("../overlay/skins/glass/skin.js"),
+    )
+}
+
+// ─────────────────────────────────────────────
 // Preview Assets
 // ─────────────────────────────────────────────
 
@@ -125,6 +144,13 @@ async fn ambient_preview_art() -> ([(&'static str, &'static str); 1], &'static [
     (
         [("Content-Type", "image/webp")],
         include_bytes!("../overlay/assets/previews/ambient.webp"),
+    )
+}
+
+async fn glass_preview_art() -> ([(&'static str, &'static str); 1], &'static [u8]) {
+    (
+        [("Content-Type", "image/webp")],
+        include_bytes!("../overlay/assets/previews/glass.webp"),
     )
 }
 
@@ -248,9 +274,13 @@ pub async fn start_server(
         // Ambient skin
         .route("/skins/ambient/style.css", get(ambient_style))
         .route("/skins/ambient/skin.js", get(ambient_script))
+        // Glass skin
+        .route("/skins/glass/style.css", get(glass_style))
+        .route("/skins/glass/skin.js", get(glass_script))
         // Preview assets
         .route("/assets/previews/default.webp", get(default_preview_art))
         .route("/assets/previews/ambient.webp", get(ambient_preview_art))
+        .route("/assets/previews/glass.webp", get(glass_preview_art))
         // Shared assets
         .route("/app.js", get(app_script))
         .route("/utils.js", get(utils))
