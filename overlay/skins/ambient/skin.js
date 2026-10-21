@@ -1,10 +1,12 @@
- // ─────────────────────────────────────────────
- // Elements
- // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Elements
+// ─────────────────────────────────────────────
 
-const trackContent = document.getElementById("track-content");
+const trackContent = document.querySelector(".track-content");
+
 const title = document.getElementById("title");
 const artist = document.getElementById("artist");
+
 const albumArt = document.getElementById("album-art");
 const backgroundArt = document.getElementById("background-art");
 
@@ -13,30 +15,68 @@ const position = document.getElementById("position");
 const duration = document.getElementById("duration");
 
 // ─────────────────────────────────────────────
+// Transition State
+// ─────────────────────────────────────────────
+
+let trackTransitionId = 0;
+
+// ─────────────────────────────────────────────
 // Track
 // ─────────────────────────────────────────────
 
 function updateTrack(data, artworkUrl, hasTrack) {
+    const transitionId = ++trackTransitionId;
+
+    // Cancel previous transitions before handling the latest update.
+    gsap.killTweensOf(trackContent);
+
+    const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+    ).matches;
+
     if (!hasTrack) {
         title.textContent = "Waiting for music";
         artist.textContent = "Start playing something";
-        albumArt.removeAttribute("src");
-        backgroundArt.removeAttribute("src");
+
+        setArtwork(null);
+
+        gsap.set(trackContent, {
+            opacity: 1,
+            x: 0,
+        });
+
+        resetProgress();
 
         return;
     }
 
-    const trackChanged =
-        data.title !== currentState.title ||
-        data.artist !== currentState.artist;
+    const nextTitle = data.title ?? "No song playing";
+    const nextArtist = data.artist ?? "—";
 
+    const trackChanged =
+        nextTitle !== title.textContent ||
+        nextArtist !== artist.textContent;
+
+    // Keep both artwork layers synchronized when only artwork changes.
     if (!trackChanged) {
-        // Artwork may change independently of track metadata.
-        if (artworkUrl) {
-            albumArt.src = artworkUrl;
-        } else {
-            albumArt.removeAttribute("src");
-        }
+        setArtwork(artworkUrl);
+
+        gsap.set(trackContent, {
+            opacity: 1,
+            x: 0,
+        });
+
+        return;
+    }
+
+    // Update immediately when reduced motion is preferred.
+    if (prefersReducedMotion) {
+        renderTrack(data, artworkUrl);
+
+        gsap.set(trackContent, {
+            opacity: 1,
+            x: 0,
+        });
 
         return;
     }
@@ -49,21 +89,18 @@ function updateTrack(data, artworkUrl, hasTrack) {
         ease: "power2.in",
 
         onComplete: () => {
-            title.textContent = data.title ?? "No song playing";
-            artist.textContent = data.artist ?? "—";
-
-            if (artworkUrl) {
-                albumArt.src = artworkUrl;
-                backgroundArt.src = artworkUrl;
-            } else {
-                albumArt.removeAttribute("src");
-                backgroundArt.removeAttribute("src");
+            // Ignore callbacks belonging to older transitions.
+            if (transitionId !== trackTransitionId) {
+                return;
             }
+
+            renderTrack(data, artworkUrl);
 
             gsap.set(trackContent, {
                 x: 40,
             });
 
+            // Animate the new track into view.
             gsap.to(trackContent, {
                 opacity: 1,
                 x: 0,
@@ -72,6 +109,27 @@ function updateTrack(data, artworkUrl, hasTrack) {
             });
         },
     });
+}
+
+// ─────────────────────────────────────────────
+// Track Rendering
+// ─────────────────────────────────────────────
+
+function renderTrack(data, artworkUrl) {
+    title.textContent = data.title ?? "No song playing";
+    artist.textContent = data.artist ?? "—";
+
+    setArtwork(artworkUrl);
+}
+
+function setArtwork(artworkUrl) {
+    if (artworkUrl) {
+        albumArt.src = artworkUrl;
+        backgroundArt.src = artworkUrl;
+    } else {
+        albumArt.removeAttribute("src");
+        backgroundArt.removeAttribute("src");
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -92,6 +150,15 @@ function updateProgress(data) {
     // Shared app.js handles playback interpolation.
     gsap.set(progress, {
         width: `${percentage}%`,
+    });
+}
+
+function resetProgress() {
+    position.textContent = formatTime(0);
+    duration.textContent = formatTime(0);
+
+    gsap.set(progress, {
+        width: "0%",
     });
 }
 
