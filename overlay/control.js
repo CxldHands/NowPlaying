@@ -6,9 +6,9 @@ const skinSelect = document.getElementById("skin-select");
 const skinPreview = document.getElementById("skin-preview");
 const previewSkinName = document.getElementById("preview-skin-name");
 const skinSettings = {
-    default: { width: 400, height: 520, preview: "/assets/previews/default.webp", label: "Default" },
-    ambient: { width: 470, height: 140, preview: "/assets/previews/ambient.webp", label: "Ambient" },
-    glass: { width: 440, height: 200, preview: "/assets/previews/glass.webp", label: "Glass" },
+    default: { width: 400, height: 520, label: "Default" },
+    ambient: { width: 470, height: 140, label: "Ambient" },
+    glass: { width: 440, height: 200, label: "Glass" },
 };
 
 const urlElement = document.getElementById("overlay-url");
@@ -47,10 +47,41 @@ function updateUrlVisibility() {
 }
 
 function updateSkinPreview() {
-    const skin = skinSettings[skinSelect.value] || skinSettings.default;
-    skinPreview.src = skin.preview;
-    skinPreview.alt = `${skin.label} skin preview`;
+    const skinKey = skinSettings[skinSelect.value] ? skinSelect.value : "default";
+    const skin = skinSettings[skinKey];
+
+    skinPreview.title = `Live ${skin.label} skin preview`;
+    skinPreview.style.width = `${skin.width}px`;
+    skinPreview.style.height = `${skin.height}px`;
+    skinPreview.src = `/overlay?skin=${encodeURIComponent(skinKey)}`;
+
     previewSkinName.textContent = skin.label;
+    updatePreviewScale();
+}
+
+function updatePreviewScale() {
+    const skin = skinSettings[skinSelect.value] || skinSettings.default;
+    const stage = skinPreview.parentElement;
+    if (!stage) return;
+
+    const stageStyle = window.getComputedStyle(stage);
+    const horizontalPadding =
+        Number.parseFloat(stageStyle.paddingLeft) +
+        Number.parseFloat(stageStyle.paddingRight);
+    const verticalPadding =
+        Number.parseFloat(stageStyle.paddingTop) +
+        Number.parseFloat(stageStyle.paddingBottom);
+    const availableWidth = Math.max(0, stage.clientWidth - horizontalPadding);
+    const availableHeight = Math.max(0, stage.clientHeight - verticalPadding);
+    if (!availableWidth || !availableHeight) return;
+
+    const scale = Math.min(
+        availableWidth / skin.width,
+        availableHeight / skin.height,
+        1
+    );
+
+    skinPreview.style.setProperty("--preview-scale", String(scale));
 }
 
 function updateBrowserSize() {
@@ -93,6 +124,13 @@ openButton.addEventListener("click", () => {
 updateUrlVisibility();
 updateBrowserSize();
 updateSkinPreview();
+
+if ("ResizeObserver" in window) {
+    const previewResizeObserver = new ResizeObserver(updatePreviewScale);
+    previewResizeObserver.observe(skinPreview.parentElement);
+} else {
+    window.addEventListener("resize", updatePreviewScale);
+}
 
 // ─────────────────────────────────────────────
 // Media source discovery and selection

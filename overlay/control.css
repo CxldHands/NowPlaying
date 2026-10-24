@@ -117,7 +117,20 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--ink); outl
 }
 
 .preview-stage { position: relative; flex: 1; display: grid; place-items: center; min-height: 0; padding: 24px 0; }
-#skin-preview { display: block; width: min(100%, 600px); max-height: min(60vh, 660px); object-fit: contain; object-position: center; }
+.preview-stage { overflow: hidden; }
+#skin-preview {
+    display: block;
+    flex: 0 0 auto;
+    width: 400px;
+    height: 520px;
+    max-width: none;
+    max-height: none;
+    border: 0;
+    background: transparent;
+    transform: scale(var(--preview-scale, 1));
+    transform-origin: center;
+    pointer-events: none;
+}
 .preview-caption { position: relative; padding-top: 10px; color: var(--mute); font: 500 clamp(11px, .8vw, 13px) var(--mono); letter-spacing: .12em; text-align: center; text-transform: uppercase; }
 
 /* ───────── Control pane ───────── */
@@ -236,7 +249,7 @@ select:disabled { color: var(--mute); border-bottom-style: dashed; cursor: wait;
     .workspace { display: flex; flex-direction: column; min-height: 0; }
     .preview-rail { min-height: 300px; padding: 20px; border-right: 0; border-bottom: 1px solid var(--rule); }
     .preview-stage { min-height: 210px; padding: 12px 0; }
-    #skin-preview { width: min(65%, 360px); max-height: 300px; }
+    #skin-preview { max-width: none; max-height: none; }
     .control-pane { padding: clamp(24px, 5vw, 48px); }
     .page-heading h1 { font-size: clamp(32px, 6vw, 52px); }
     .page-heading h1 .heading-muted { font-size: .78em; }
@@ -246,7 +259,7 @@ select:disabled { color: var(--mute); border-bottom-style: dashed; cursor: wait;
 @media (max-width: 560px) {
     .preview-rail { min-height: 260px; padding: 16px; }
     .preview-stage { min-height: 170px; }
-    #skin-preview { width: min(72%, 280px); max-height: 220px; }
+    #skin-preview { max-width: none; max-height: none; }
     .control-pane { padding: 26px 16px; }
     .page-heading h1 { font-size: clamp(27px, 8vw, 40px); }
     .page-heading h1 .heading-muted { font-size: .72em; }
