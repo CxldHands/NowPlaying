@@ -1,13 +1,14 @@
 // ─────────────────────────────────────────────
-// DOM Elements
+// DOM Elements and configuration
 // ─────────────────────────────────────────────
 
 const skinSelect = document.getElementById("skin-select");
 const skinPreview = document.getElementById("skin-preview");
+const previewSkinName = document.getElementById("preview-skin-name");
 const skinSettings = {
-    default: {width: 400, height: 520, preview: "/assets/previews/default.webp"},
-    ambient: {width: 470, height: 140, preview: "/assets/previews/ambient.webp"},
-    glass: {width: 440, height: 200, preview: "/assets/previews/glass.webp"},
+    default: { width: 400, height: 520, preview: "/assets/previews/default.webp", label: "Default" },
+    ambient: { width: 470, height: 140, preview: "/assets/previews/ambient.webp", label: "Ambient" },
+    glass: { width: 440, height: 200, preview: "/assets/previews/glass.webp", label: "Glass" },
 };
 
 const urlElement = document.getElementById("overlay-url");
@@ -16,166 +17,205 @@ const browserSize = document.getElementById("browser-size");
 const copyButton = document.getElementById("copy-button");
 const openButton = document.getElementById("open-button");
 const message = document.getElementById("message");
-
 const statusDot = document.getElementById("status-dot");
 const statusText = document.getElementById("status-text");
 const track = document.getElementById("track");
 
-let urlVisible = false;
+const sourceSelect = document.getElementById("source-select");
+const sourceStatusDot = document.getElementById("source-status-dot");
+const sourceStatusText = document.getElementById("source-status-text");
+const sourceMessage = document.getElementById("source-message");
 
+let urlVisible = false;
+let selectedSource = null;
+let isSelectingSource = false;
+let sourceRequestInFlight = false;
 
 // ─────────────────────────────────────────────
-// Overlay URL
+// Overlay URL and skin controls
 // ─────────────────────────────────────────────
 
 function getOverlayUrl() {
-    return `${window.location.origin}/overlay?skin=${skinSelect.value}`;
+    return `${window.location.origin}/overlay?skin=${encodeURIComponent(skinSelect.value)}`;
 }
 
 function updateUrlVisibility() {
-    if (urlVisible) {
-        urlElement.textContent = getOverlayUrl();
-
-        visibilityButton.setAttribute(
-            "aria-label",
-            "Hide overlay URL"
-        );
-
-        visibilityButton.setAttribute(
-            "title",
-            "Hide overlay URL"
-        );
-
-        return;
-    }
-
-    urlElement.textContent = "••••••••••••••••••••";
-
-    visibilityButton.setAttribute(
-        "aria-label",
-        "Show overlay URL"
-    );
-
-    visibilityButton.setAttribute(
-        "title",
-        "Show overlay URL"
-    );
+    urlElement.textContent = urlVisible ? getOverlayUrl() : "••••••••••••••••••••";
+    const label = urlVisible ? "Hide overlay URL" : "Show overlay URL";
+    visibilityButton.setAttribute("aria-label", label);
+    visibilityButton.setAttribute("title", label);
 }
-
-
-// ─────────────────────────────────────────────
-// Skin Preview
-// ─────────────────────────────────────────────
 
 function updateSkinPreview() {
-    skinPreview.src = skinSettings[skinSelect.value].preview;
-    skinPreview.alt = `${skinSelect.value} skin preview`;
+    const skin = skinSettings[skinSelect.value] || skinSettings.default;
+    skinPreview.src = skin.preview;
+    skinPreview.alt = `${skin.label} skin preview`;
+    previewSkinName.textContent = skin.label;
 }
 
-
-// ─────────────────────────────────────────────
-// Skin Selection
-// ─────────────────────────────────────────────
+function updateBrowserSize() {
+    const skin = skinSettings[skinSelect.value] || skinSettings.default;
+    browserSize.textContent = `${skin.width} × ${skin.height} px`;
+}
 
 skinSelect.addEventListener("change", () => {
     urlVisible = false;
-
     updateUrlVisibility();
     updateBrowserSize();
     updateSkinPreview();
 });
 
-
-// ─────────────────────────────────────────────
-// Browser Source Size
-// ─────────────────────────────────────────────
-
-function updateBrowserSize() {
-    const { width, height } = skinSettings[skinSelect.value];
-
-    browserSize.textContent = `${width} × ${height} px`;
-}
-
-
-// ─────────────────────────────────────────────
-// URL Visibility
-// ─────────────────────────────────────────────
-
 visibilityButton.addEventListener("click", () => {
     urlVisible = !urlVisible;
-
     updateUrlVisibility();
 });
-
-updateUrlVisibility();
-updateBrowserSize();
-
-
-// ─────────────────────────────────────────────
-// Copy Overlay URL
-// ─────────────────────────────────────────────
 
 copyButton.addEventListener("click", async () => {
     try {
         await navigator.clipboard.writeText(getOverlayUrl());
-
         message.textContent = "Overlay URL copied to clipboard.";
+        const originalLabel = "Copy URL";
         copyButton.textContent = "Copied!";
-
-        setTimeout(() => {
-            copyButton.textContent = "Copy URL";
+        window.setTimeout(() => {
+            copyButton.textContent = originalLabel;
             message.textContent = "";
         }, 1500);
-
     } catch (error) {
-        message.textContent = "Could not copy the URL.";
+        console.error("Could not copy overlay URL:", error);
+        message.textContent = "Could not copy the URL. Check browser clipboard permissions.";
     }
 });
 
-
-// ─────────────────────────────────────────────
-// Open Overlay
-// ─────────────────────────────────────────────
-
 openButton.addEventListener("click", () => {
-    window.open(getOverlayUrl(), "_blank");
+    window.open(getOverlayUrl(), "_blank", "noopener,noreferrer");
 });
 
+updateUrlVisibility();
+updateBrowserSize();
+updateSkinPreview();
 
 // ─────────────────────────────────────────────
-// Media Status
+// Media source discovery and selection
+// ─────────────────────────────────────────────
+
+async function updateSources() {
+    if (sourceRequestInFlight) return;
+    sourceRequestInFlight = true;
+
+    try {
+        const response = await fetch("/sources", { cache: "no-store" });
+        if (!response.ok) throw new Error(`Source request failed (${response.status})`);
+
+        const data = await response.json();
+        if (!Array.isArray(data.available_sources) || typeof data.selected_source !== "string") {
+            throw new Error("Invalid source response");
+        }
+
+        selectedSource = data.selected_source;
+        const availableSources = [...new Set(data.available_sources.filter((source) => typeof source === "string"))].sort();
+        const options = [...availableSources];
+        if (selectedSource && !options.includes(selectedSource)) options.push(selectedSource);
+
+        const currentValue = sourceSelect.value;
+        sourceSelect.replaceChildren();
+
+        if (options.length === 0) {
+            const option = document.createElement("option");
+            option.value = "";
+            option.textContent = "No media sources detected";
+            sourceSelect.append(option);
+        } else {
+            for (const source of options) {
+                const option = document.createElement("option");
+                option.value = source;
+                option.textContent = availableSources.includes(source) ? source : `${source} (unavailable)`;
+                sourceSelect.append(option);
+            }
+        }
+
+        if (!isSelectingSource) sourceSelect.value = options.includes(selectedSource) ? selectedSource : (options.includes(currentValue) ? currentValue : "");
+        sourceSelect.disabled = isSelectingSource || options.length === 0;
+
+        const isAvailable = availableSources.includes(selectedSource);
+        sourceStatusDot.classList.toggle("available", isAvailable);
+        sourceStatusDot.classList.toggle("unavailable", !isAvailable);
+        sourceStatusText.textContent = isAvailable
+            ? `${selectedSource} is available`
+            : `Waiting for ${selectedSource || "a selected source"}`;
+    } catch (error) {
+        console.error("Could not refresh media sources:", error);
+        sourceStatusDot.classList.remove("available");
+        sourceStatusDot.classList.add("unavailable");
+        sourceStatusText.textContent = "Could not load media sources";
+    } finally {
+        sourceRequestInFlight = false;
+    }
+}
+
+sourceSelect.addEventListener("change", async () => {
+    const source = sourceSelect.value;
+    if (!source || source === selectedSource || isSelectingSource) return;
+
+    isSelectingSource = true;
+    sourceSelect.disabled = true;
+    sourceMessage.textContent = `Selecting ${source}…`;
+
+    try {
+        const response = await fetch("/sources/select", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ source }),
+        });
+        if (!response.ok) throw new Error(`Source selection failed (${response.status})`);
+
+        const data = await response.json();
+        selectedSource = data.selected_source;
+        sourceMessage.textContent = `Selected ${selectedSource}.`;
+    } catch (error) {
+        console.error("Could not select media source:", error);
+        sourceMessage.textContent = "Could not select source. Please try again.";
+    } finally {
+        isSelectingSource = false;
+        await updateSources();
+    }
+});
+
+// ─────────────────────────────────────────────
+// Selected media status
 // ─────────────────────────────────────────────
 
 async function updateStatus() {
     try {
-        const response = await fetch("/now-playing");
+        const response = await fetch("/now-playing", { cache: "no-store" });
+        if (!response.ok) throw new Error(`Status request failed (${response.status})`);
         const data = await response.json();
-
         const hasTrack = Boolean(data.title);
 
         if (hasTrack) {
             statusDot.classList.add("connected");
-
+            statusDot.classList.remove("disconnected");
             statusText.textContent = data.is_playing
-                ? "Spotify connected"
-                : "Spotify paused";
-
+                ? `${selectedSource || "Media source"} playing`
+                : `${selectedSource || "Media source"} paused`;
             track.textContent = `${data.title} — ${data.artist || "Unknown artist"}`;
-
             return;
         }
 
         statusDot.classList.remove("connected");
-        statusText.textContent = "Waiting for music";
+        statusDot.classList.add("disconnected");
+        statusText.textContent = selectedSource ? `Waiting for ${selectedSource}` : "Waiting for music";
         track.textContent = "Nothing playing";
-
     } catch (error) {
+        console.error("Could not refresh playback status:", error);
         statusDot.classList.remove("connected");
+        statusDot.classList.add("disconnected");
         statusText.textContent = "NowPlaying is not responding";
         track.textContent = "Unable to read media";
     }
 }
 
-updateStatus();
 
-setInterval(updateStatus, 2000);
+updateSources();
+updateStatus();
+window.setInterval(updateSources, 2000);
+window.setInterval(updateStatus, 2000);

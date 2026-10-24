@@ -5,12 +5,6 @@ use tokio::sync::{Mutex, watch};
 use crate::state::NowPlayingState;
 
 // ─────────────────────────────────────────────
-// Configuration
-// ─────────────────────────────────────────────
-
-const ALLOWED_SOURCES: &[&str] = &["Spotify.exe"];
-
-// ─────────────────────────────────────────────
 // SMTC
 // ─────────────────────────────────────────────
 
@@ -32,94 +26,172 @@ pub async fn start_smtc(
                         source,
                     } => {
                         let session_key = session_id.to_string();
-                        let allowed = ALLOWED_SOURCES.contains(&source.as_str());
+
+                        {
+                            let mut current = state.lock().await;
+
+                            current.sessions.insert(
+                                session_key.clone(),
+                                source.clone(),
+                            );
+
+                            current
+                                .session_snapshots
+                                .entry(session_key.clone())
+                                .or_default();
+
+                            if current.selected_source == source {
+                                current.activate_session(&session_key);
+                            }
+                        }
 
                         println!(
                             "{} media source: {source}",
-                            if allowed { "Accepted" } else { "Ignoring" }
+                            {
+                                let current = state.lock().await;
+
+                                if current.selected_source == source {
+                                    "Selected"
+                                } else {
+                                    "Discovered"
+                                }
+                            }
                         );
 
-                        // Register the newly accepted session.
-                        if allowed {
-                            let mut current = state.lock().await;
-
-                            current.clear();
-                            current.active_session_id = Some(session_key.clone());
-                        }
-
                         let state = Arc::clone(&state);
+                        let source_name = source.clone();
 
                         tokio::spawn(async move {
                             while let Some(update) = rx.recv().await {
-                                if !allowed {
-                                    continue;
-                                }
-
                                 let mut current = state.lock().await;
 
-                                // Ignore updates from sessions that no longer
-                                // own the displayed playback state.
-                                if current.active_session_id.as_deref()
-                                    != Some(session_key.as_str())
-                                {
+                                // Ignore updates from sessions that have
+                                // already been removed.
+                                if !current.sessions.contains_key(&session_key) {
                                     continue;
                                 }
 
                                 match update {
                                     gsmtc::SessionUpdateEvent::Model(model) => {
-                                        if let Some(media) = model.media {
-                                            current.title = Some(media.title);
-                                            current.artist = Some(media.artist);
-                                            current.album = media.album.map(|album| album.title);
+                                        {
+                                            let snapshot = current
+                                                .session_snapshots
+                                                .entry(session_key.clone())
+                                                .or_default();
+
+                                            if let Some(media) = model.media {
+                                                snapshot.title = Some(media.title);
+                                                snapshot.artist = Some(media.artist);
+                                                snapshot.album =
+                                                    media.album.map(|album| album.title);
+                                            }
+
+                                            if let Some(playback) = model.playback {
+                                                snapshot.is_playing = matches!(
+                                                    playback.status,
+                                                    gsmtc::PlaybackStatus::Playing
+                                                );
+
+                                                snapshot.position_anchor =
+                                                    if snapshot.is_playing {
+                                                        Some(std::time::Instant::now())
+                                                    } else {
+                                                        None
+                                                    };
+                                            }
+
+                                            if let Some(timeline) = model.timeline {
+                                                snapshot.position_ms = timeline
+                                                    .position
+                                                    .saturating_sub(timeline.start)
+                                                    .max(0) / 10_000;
+
+                                                snapshot.duration_ms = timeline
+                                                    .end
+                                                    .saturating_sub(timeline.start)
+                                                    .max(0) / 10_000;
+
+                                                snapshot.position_anchor =
+                                                    if snapshot.is_playing {
+                                                        Some(std::time::Instant::now())
+                                                    } else {
+                                                        None
+                                                    };
+                                            }
                                         }
 
-                                        if let Some(playback) = model.playback {
-                                            let is_playing = matches!(
-                                                playback.status,
-                                                gsmtc::PlaybackStatus::Playing
-                                            );
+                                        if current.active_session_id.as_deref()
+                                            == Some(session_key.as_str())
+                                        {
+                                            let snapshot = current
+                                                .session_snapshots
+                                                .get(&session_key)
+                                                .cloned()
+                                                .expect("Session snapshot should exist");
 
-                                            current.set_playing(is_playing);
-                                        }
-
-                                        if let Some(timeline) = model.timeline {
-                                            // Convert 100-nanosecond ticks to milliseconds.
-                                            current.position_ms = timeline.position.saturating_sub(timeline.start).max(0) / 10_000;
-                                            current.duration_ms = timeline.end.saturating_sub(timeline.start).max(0) / 10_000;
-
-                                            current.position_anchor = if current.is_playing {
-                                                Some(std::time::Instant::now())
-                                            } else {
-                                                None
-                                            };
+                                            current.title = snapshot.title;
+                                            current.artist = snapshot.artist;
+                                            current.album = snapshot.album;
+                                            current.position_ms = snapshot.position_ms;
+                                            current.duration_ms = snapshot.duration_ms;
+                                            current.is_playing = snapshot.is_playing;
+                                            current.position_anchor = snapshot.position_anchor;
                                         }
                                     }
 
                                     gsmtc::SessionUpdateEvent::Media(model, image) => {
-                                        if let Some(media) = model.media {
-                                            current.title = Some(media.title);
-                                            current.artist = Some(media.artist);
-                                            current.album = media.album.map(|album| album.title);
+                                        {
+                                            let snapshot = current
+                                                .session_snapshots
+                                                .entry(session_key.clone())
+                                                .or_default();
+
+                                            if let Some(media) = model.media {
+                                                snapshot.title = Some(media.title);
+                                                snapshot.artist = Some(media.artist);
+                                                snapshot.album =
+                                                    media.album.map(|album| album.title);
+                                            }
+
+                                            match image {
+                                                Some(image) => {
+                                                    snapshot.artwork = Some(image.data);
+                                                    snapshot.artwork_type =
+                                                        Some(image.content_type);
+                                                }
+                                                None => {
+                                                    snapshot.artwork = None;
+                                                    snapshot.artwork_type = None;
+                                                }
+                                            }
                                         }
 
-                                        match image {
-                                            Some(image) => {
-                                                current.artwork = Some(image.data);
-                                                current.artwork_type = Some(image.content_type);
-                                            }
-                                            None => {
-                                                current.artwork = None;
-                                                current.artwork_type = None;
-                                            }
-                                        }
+                                        if current.active_session_id.as_deref()
+                                            == Some(session_key.as_str())
+                                        {
+                                            let snapshot = current
+                                                .session_snapshots
+                                                .get(&session_key)
+                                                .cloned()
+                                                .expect("Session snapshot should exist");
 
-                                        current.artwork_version += 1;
+                                            current.title = snapshot.title;
+                                            current.artist = snapshot.artist;
+                                            current.album = snapshot.album;
+                                            current.artwork = snapshot.artwork;
+                                            current.artwork_type = snapshot.artwork_type;
+                                            current.artwork_version += 1;
+                                        }
                                     }
                                 }
                             }
 
-                            // Clear state only if this session still owns it.
+                            // Remove this session's cached data when its
+                            // receiver ends.
                             let mut current = state.lock().await;
+
+                            current.sessions.remove(&session_key);
+                            current.session_snapshots.remove(&session_key);
 
                             if current.active_session_id.as_deref()
                                 == Some(session_key.as_str())
@@ -127,13 +199,18 @@ pub async fn start_smtc(
                                 current.clear();
                             }
 
-                            println!("Session {session_key} ended.");
+                            println!(
+                                "Session {session_key} ended ({source_name})."
+                            );
                         });
                     }
 
                     ManagerEvent::SessionRemoved { session_id } => {
                         let session_key = session_id.to_string();
                         let mut current = state.lock().await;
+
+                        current.sessions.remove(&session_key);
+                        current.session_snapshots.remove(&session_key);
 
                         if current.active_session_id.as_deref()
                             == Some(session_key.as_str())

@@ -1,15 +1,16 @@
 use axum::{
     Router,
-    extract::{Query, Request, State},
+    extract::{Json, Query, Request, State},
     http::{StatusCode, header::HOST},
     middleware::{self, Next},
     response::{IntoResponse, Response},
-    routing::get,
+    routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{Mutex, watch};
 
+use crate::config::save_selected_source;
 use crate::state::NowPlayingState;
 
 // ─────────────────────────────────────────────
@@ -32,6 +33,17 @@ struct NowPlayingResponse {
     position_ms: i64,
     duration_ms: i64,
     is_playing: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct SourcesResponse {
+    selected_source: String,
+    available_sources: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SelectSourceRequest {
+    source: String,
 }
 
 // ─────────────────────────────────────────────
@@ -207,6 +219,116 @@ async fn now_playing(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 // ─────────────────────────────────────────────
+// Media Sources API
+// ─────────────────────────────────────────────
+
+async fn sources(State(state): State<AppState>) -> impl IntoResponse {
+    let current = state.lock().await;
+
+    let mut available_sources: Vec<String> = current.sessions.values().cloned().collect();
+
+    available_sources.sort();
+    available_sources.dedup();
+
+    axum::Json(SourcesResponse {
+        selected_source: current.selected_source.clone(),
+        available_sources,
+    })
+}
+
+// ─────────────────────────────────────────────
+// Media Source Selection API
+// ─────────────────────────────────────────────
+
+async fn select_source(
+    State(state): State<AppState>,
+    Json(payload): Json<SelectSourceRequest>,
+) -> Response {
+    let source = payload.source.trim().to_string();
+
+    if source.is_empty() {
+        return (StatusCode::BAD_REQUEST, "Source name cannot be empty").into_response();
+    }
+
+    let mut current = state.lock().await;
+
+    let matching_session = current
+        .sessions
+        .iter()
+        .find(|(_, session_source)| session_source.as_str() == source)
+        .map(|(session_id, _)| session_id.clone());
+
+    if current.selected_source == source
+        && matching_session.is_some()
+        && current.active_session_id == matching_session
+    {
+        let mut available_sources: Vec<String> = current.sessions.values().cloned().collect();
+
+        available_sources.sort();
+        available_sources.dedup();
+
+        return axum::Json(SourcesResponse {
+            selected_source: current.selected_source.clone(),
+            available_sources,
+        })
+        .into_response();
+    }
+
+    let preference_changed = current.selected_source != source;
+    current.selected_source = source.clone();
+
+    match matching_session.as_deref() {
+        Some(session_id) => {
+            current.activate_session(session_id);
+        }
+        None => {
+            current.clear();
+        }
+    }
+
+    let is_available = current.active_session_id.is_some();
+
+    let mut available_sources: Vec<String> = current.sessions.values().cloned().collect();
+
+    available_sources.sort();
+    available_sources.dedup();
+
+    let response = SourcesResponse {
+        selected_source: current.selected_source.clone(),
+        available_sources,
+    };
+
+    drop(current);
+
+    if preference_changed {
+        let source_to_save = source.clone();
+
+        match tokio::task::spawn_blocking(move || save_selected_source(&source_to_save)).await {
+            Ok(Ok(())) => {
+                println!("Saved media source preference: {source}");
+            }
+            Ok(Err(error)) => {
+                eprintln!("Could not save media source preference: {error}");
+            }
+            Err(error) => {
+                eprintln!("Configuration save task failed: {error}");
+            }
+        }
+    }
+
+    println!(
+        "Selected media source: {source} ({})",
+        if is_available {
+            "available"
+        } else {
+            "waiting for session"
+        }
+    );
+
+    axum::Json(response).into_response()
+}
+
+// ─────────────────────────────────────────────
 // Artwork API
 // ─────────────────────────────────────────────
 
@@ -288,6 +410,8 @@ pub async fn start_server(
         .route("/favicon.svg", get(favicon))
         // API
         .route("/now-playing", get(now_playing))
+        .route("/sources", get(sources))
+        .route("/sources/select", post(select_source))
         .route("/artwork", get(artwork))
         .with_state(state)
         .layer(middleware::from_fn(validate_host));

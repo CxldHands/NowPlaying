@@ -1,4 +1,21 @@
-use std::time::Instant;
+use std::{collections::HashMap, time::Instant};
+
+// ─────────────────────────────────────────────
+// Session Snapshot
+// ─────────────────────────────────────────────
+
+#[derive(Debug, Clone, Default)]
+pub struct SessionSnapshot {
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    pub artwork: Option<Vec<u8>>,
+    pub artwork_type: Option<String>,
+    pub position_ms: i64,
+    pub duration_ms: i64,
+    pub is_playing: bool,
+    pub position_anchor: Option<Instant>,
+}
 
 // ─────────────────────────────────────────────
 // Application State
@@ -14,12 +31,15 @@ pub struct NowPlayingState {
     pub artwork_version: u64,
     pub active_session_id: Option<String>,
 
+    // Media source management
+    pub selected_source: String,
+    pub sessions: HashMap<String, String>,
+    pub session_snapshots: HashMap<String, SessionSnapshot>,
+
     // Playback information
     pub position_ms: i64,
     pub duration_ms: i64,
     pub is_playing: bool,
-
-    // The position reported by SMTC and the moment it was reported.
     pub position_anchor: Option<Instant>,
 }
 
@@ -33,6 +53,9 @@ impl Default for NowPlayingState {
             artwork_type: None,
             artwork_version: 0,
             active_session_id: None,
+            selected_source: "Spotify.exe".to_string(),
+            sessions: HashMap::new(),
+            session_snapshots: HashMap::new(),
             position_ms: 0,
             duration_ms: 0,
             is_playing: false,
@@ -66,20 +89,21 @@ impl NowPlayingState {
             return;
         }
 
-        // Preserve the interpolated position when pausing.
         if !is_playing {
             self.position_ms = self.current_position_ms();
         }
 
         self.is_playing = is_playing;
-
-        // Start a fresh position anchor when resuming.
         self.position_anchor = if is_playing {
             Some(Instant::now())
         } else {
             None
         };
     }
+
+    // ─────────────────────────────────────────────
+    // Active Playback State
+    // ─────────────────────────────────────────────
 
     pub fn clear(&mut self) {
         self.title = None;
@@ -95,5 +119,24 @@ impl NowPlayingState {
         self.duration_ms = 0;
         self.is_playing = false;
         self.position_anchor = None;
+    }
+
+    pub fn activate_session(&mut self, session_id: &str) {
+        self.clear();
+        self.active_session_id = Some(session_id.to_string());
+
+        if let Some(snapshot) = self.session_snapshots.get(session_id).cloned() {
+            self.title = snapshot.title;
+            self.artist = snapshot.artist;
+            self.album = snapshot.album;
+            self.artwork = snapshot.artwork;
+            self.artwork_type = snapshot.artwork_type;
+            self.position_ms = snapshot.position_ms;
+            self.duration_ms = snapshot.duration_ms;
+            self.is_playing = snapshot.is_playing;
+            self.position_anchor = snapshot.position_anchor;
+
+            self.artwork_version += 1;
+        }
     }
 }

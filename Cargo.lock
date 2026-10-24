@@ -1244,6 +1244,7 @@ dependencies = [
  "axum",
  "muda",
  "serde",
+ "serde_json",
  "tokio",
  "tray-icon",
  "win-gsmtc",

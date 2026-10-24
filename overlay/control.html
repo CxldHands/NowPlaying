@@ -3,208 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
     <title>NowPlaying</title>
     <link rel="icon" href="/favicon.svg">
+    <link rel="preload" href="/assets/fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/control.css">
 </head>
 <body>
-    <main class="container">
-
-        <!-- ─────────────────────────────────────────────
-             Header
-             ───────────────────────────────────────────── -->
-             
-        <header class="header">
-            <div class="brand">
-                <img
-                    class="brand-mark"
-                    src="/favicon.svg"
-                    alt=""
-                >
-                <div class="brand-text">
-                    <span class="kanji-watermark" aria-hidden="true">洋楽</span>
-                    <h1>NowPlaying</h1>
-                    <p>
-                        Local media system / stream overlay control
-                    </p>
+    <main class="page-frame">
+        <div class="workspace">
+            <aside class="preview-rail" aria-label="Skin preview and playback status">
+                <div class="logo" aria-label="NowPlaying">
+<svg viewBox="-0.6 -0.6 119.48 124.08" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NowPlaying"><path stroke-width="1.2" stroke-linejoin="round" d="M111.85 108.77a28.95 28.95 0 0 1-14.13 10.48c-.26.12-.55.18-.84.18-.28 0-.56-.06-.82-.17v.06c0 1.96-1.6 3.56-3.57 3.56h-7.68c-1.96 0-3.57-1.6-3.57-3.56V64.19c0-1.96 1.6-3.57 3.57-3.57h7.68c1.96 0 3.57 1.6 3.57 3.57v.34c.26-.12.54-.18.82-.18.22 0 .44.04.64.1v.01c4.36 1.45 8.26 3.92 11.42 7.11V59.15c0-14.89-4.99-27.63-13.81-36.6l-3.91 5.83c-7.95-8.75-19.4-14.27-32.08-14.27-12.76 0-24.29 5.59-32.24 14.45l-4.73-5.78c-8.7 8.87-13.63 21.43-13.63 36.37V73.4c3.4-4.08 7.92-7.22 13.07-8.93v-.01c.21-.07.43-.11.64-.11.28 0 .57.06.82.17v-.34c0-1.96 1.61-3.57 3.57-3.57h7.68c1.96 0 3.57 1.6 3.57 3.57v55.13c0 1.96-1.61 3.56-3.57 3.56h-7.68c-1.96 0-3.57-1.6-3.57-3.56v-.06a2.04 2.04 0 0 1-1.65-.01 28.95 28.95 0 0 1-14.13-10.48 28.7 28.7 0 0 1-4.17-8.37H0V59.15C0 42.88 6.65 28.1 17.37 17.38S42.88 0 59.14 0c16.27 0 31.06 6.66 41.77 17.37 10.72 10.72 17.37 25.5 17.37 41.77v41.25h-2.27c-.91 3-2.33 5.84-4.16 8.38"/></svg>
+</div>
+                <div class="preview-watermark" aria-hidden="true"></div>
+                <div class="preview-stage">
+                    <img id="skin-preview" src="/assets/previews/default.webp" alt="Default skin preview">
                 </div>
-            </div>
-            <div class="status-section">
-                <div class="status">
-                    <span
-                        id="status-dot"
-                        class="status-dot"
-                    ></span>
-                    <span id="status-text">
-                        Checking media...
-                    </span>
-                </div>
-                <div
-                    id="track"
-                    class="track"
-                >
-                    Nothing playing
-                </div>
-            </div>
-        </header>
+                <div class="preview-caption">Skin preview — <span id="preview-skin-name">Default</span></div>
+            </aside>
 
-        <!-- ─────────────────────────────────────────────
-             Main Controls
-             ───────────────────────────────────────────── -->
+            <section class="control-pane" aria-label="Overlay controls">
+                <div class="controls-column">
+                    <header class="page-heading">
+                        <h1><span>local media system.</span><span class="heading-muted">stream overlay control.</span></h1>
+                    </header>
+                    <div class="heading-rule" aria-hidden="true"></div>
 
-        <div class="main-grid">
+                    <section class="control-row source-row" aria-labelledby="source-heading">
+                        <div class="row-number" aria-hidden="true">01</div>
+                        <div class="row-content">
+                            <div class="row-copy">
+                                <h2 id="source-heading">Media source</h2>
+                                <p>Pick the app to listen to.</p>
+                            </div>
+                            <select id="source-select" aria-label="Media source" disabled>
+                                <option value="">Discovering sources...</option>
+                            </select>
+                            <div class="source-feedback" aria-live="polite">
+                                <span id="source-status-dot" class="source-status-dot"></span>
+                                <span id="source-status-text">Discovering media sources...</span>
+                            </div>
+                            <p id="source-message" class="inline-message" role="status"></p>
+                        </div>
+                    </section>
 
-            <!-- ─────────────────────────────────────────
-                 Skin Preview
-                 ───────────────────────────────────────── -->
+                    <section class="control-row skin-row" aria-labelledby="skin-heading">
+                        <div class="row-number" aria-hidden="true">02</div>
+                        <div class="row-content">
+                            <div class="row-copy">
+                                <h2 id="skin-heading">Skin</h2>
+                                <p>Use the size shown in OBS.</p>
+                            </div>
+                            <div class="skin-controls">
+                                <select id="skin-select" aria-label="Overlay skin">
+                                    <option value="default">Default</option>
+                                    <option value="ambient">Ambient</option>
+                                    <option value="glass">Glass</option>
+                                </select>
+                                <div class="recommended-size"><span id="browser-size">400 × 520 px</span></div>
+                            </div>
+                        </div>
+                    </section>
 
-            <section class="preview-section">
-                <div class="label">
-                    Skin Preview
-                </div>
-                <div class="preview">
-                    <img
-                        id="skin-preview"
-                        src="/assets/previews/default.webp"
-                        alt="Default skin preview"
-                    >
-                </div>
-            </section>
+                    <section class="control-row url-row" aria-labelledby="url-heading">
+                        <div class="row-number" aria-hidden="true">03</div>
+                        <div class="row-content">
+                            <div class="row-copy">
+                                <h2 id="url-heading">Overlay URL</h2>
+                                <p>Paste it into a Browser Source.</p>
+                            </div>
+                            <div class="url-container">
+                                <div id="overlay-url" class="url" aria-live="polite">••••••••••••••••••••</div>
+                                <button id="visibility-button" class="icon-button" type="button" aria-label="Show overlay URL" title="Show overlay URL">
+                                    <svg id="eye-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+                                        <circle cx="12" cy="12" r="2.5"></circle>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="buttons">
+                                <button id="copy-button" type="button">Copy URL</button>
+                                <button id="open-button" class="secondary" type="button">Open overlay</button>
+                            </div>
+                            <div id="message" class="inline-message" role="status" aria-live="polite"></div>
+                        </div>
+                    </section>
 
-            <!-- ─────────────────────────────────────────
-                 OBS Overlay
-                 ───────────────────────────────────────── -->
-
-            <section class="section">
-                <div class="label">
-                    OBS Overlay
-                </div>
-                <!-- Skin Selection -->
-                <div class="skin-selector">
-                    <label for="skin-select">
-                        Skin
-                    </label>
-                    <select id="skin-select">
-                        <option value="default">
-                            Default
-                        </option>
-                        <option value="ambient">
-                            Ambient
-                        </option>
-                        <option value="glass">
-                            Glass
-                        </option>
-                    </select>
-                </div>
-                <div class="recommended-size">
-                <span>Recommended browser source size - </span>
-                <strong id="browser-size"></strong>
-            </div>
-                <!-- Overlay URL -->
-                <div class="url-container">
-                    <div
-                        id="overlay-url"
-                        class="url"
-                    >
-                        localhost:3000/••••••
+                    <div class="playback-status" aria-live="polite">
+                        <div class="status-line">
+                            <span id="status-dot" class="status-dot disconnected"></span>
+                            <span id="status-text">Checking media...</span>
+                        </div>
+                        <div id="track" class="track">Nothing playing</div>
                     </div>
-                    <button
-                        id="visibility-button"
-                        class="icon-button"
-                        aria-label="Show overlay URL"
-                        title="Show overlay URL"
-                    >
-                        <svg
-                            id="eye-icon"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"
-                            />
-                            <circle
-                                cx="12"
-                                cy="12"
-                                r="2.5"
-                            />
-                        </svg>
-                    </button>
                 </div>
-                <!-- Buttons -->
-                <div class="buttons">
-                    <button id="copy-button">
-                        Copy URL
-                    </button>
-                    <button
-                        id="open-button"
-                        class="secondary"
-                    >
-                        Open Overlay
-                    </button>
-                </div>
-                <div
-                    id="message"
-                    class="message"
-                ></div>
             </section>
         </div>
 
-        <!-- ─────────────────────────────────────────────
-             Quick Setup
-             ───────────────────────────────────────────── -->
-
-        <section class="section">
-            <div class="label">
-                Quick Setup
-            </div>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">
-                        1
-                    </div>
-                    <div>
-                        <strong>
-                            Add the overlay to OBS
-                        </strong>
-                        <p>
-                            Add a Browser Source and
-                            use the overlay URL.
-                        </p>
-                    </div>
-                </div>
-                <div class="step">
-                    <div class="step-number">
-                        2
-                    </div>
-                    <div>
-                        <strong>
-                            Set the Browser Source size
-                        </strong>
-                        <p>
-                            Use the recommended size
-                            for your selected skin.
-                        </p>
-                    </div>
-                </div>
-                <div class="step">
-                    <div class="step-number">
-                        3
-                    </div>
-                    <div>
-                        <strong>
-                            Start playing music
-                        </strong>
-                        <p>
-                            NowPlaying handles the rest
-                            automatically.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <footer class="page-footer">
             <span class="creator-tag">@cxldhands</span>
+            <svg class="footer-wordmark" viewBox="0 0 1000 190" role="img" aria-label="NowPlaying">
+                <text x="0" y="185" font-size="240" textLength="1000" lengthAdjust="spacingAndGlyphs">NOWPLAYING</text>
+            </svg>
         </footer>
     </main>
     <script src="/control.js"></script>

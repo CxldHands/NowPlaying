@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod config;
 mod instance;
 mod server;
 mod smtc;
@@ -29,7 +30,10 @@ async fn main() {
     // Shared Application State
     // ─────────────────────────────────────────────
 
-    let state = Arc::new(Mutex::new(NowPlayingState::default()));
+    let mut initial_state = NowPlayingState::default();
+    initial_state.selected_source = config::load_selected_source();
+
+    let state = Arc::new(Mutex::new(initial_state));
 
     let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
