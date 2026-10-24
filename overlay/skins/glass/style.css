@@ -144,3 +144,7 @@ body {
         transition: none;
     }
 }
+
+html {
+    color-scheme: only dark;
+}
