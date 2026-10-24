@@ -87,17 +87,12 @@ pub async fn start_smtc(
                                             }
 
                                             if let Some(playback) = model.playback {
-                                                snapshot.is_playing = matches!(
+                                                let is_playing = matches!(
                                                     playback.status,
                                                     gsmtc::PlaybackStatus::Playing
                                                 );
 
-                                                snapshot.position_anchor =
-                                                    if snapshot.is_playing {
-                                                        Some(std::time::Instant::now())
-                                                    } else {
-                                                        None
-                                                    };
+                                                snapshot.set_playing(is_playing);
                                             }
 
                                             if let Some(timeline) = model.timeline {

@@ -17,6 +17,44 @@ pub struct SessionSnapshot {
     pub position_anchor: Option<Instant>,
 }
 
+impl SessionSnapshot {
+    pub fn current_position_ms(&self) -> i64 {
+        if !self.is_playing {
+            return self.position_ms;
+        }
+
+        let Some(anchor) = self.position_anchor else {
+            return self.position_ms;
+        };
+
+        let elapsed_ms = anchor.elapsed().as_millis() as i64;
+        let position_ms = self.position_ms.saturating_add(elapsed_ms);
+
+        if self.duration_ms > 0 {
+            position_ms.min(self.duration_ms)
+        } else {
+            position_ms
+        }
+    }
+
+    pub fn set_playing(&mut self, is_playing: bool) {
+        if self.is_playing == is_playing {
+            return;
+        }
+
+        if !is_playing {
+            self.position_ms = self.current_position_ms();
+        }
+
+        self.is_playing = is_playing;
+        self.position_anchor = if is_playing {
+            Some(Instant::now())
+        } else {
+            None
+        };
+    }
+}
+
 // ─────────────────────────────────────────────
 // Application State
 // ─────────────────────────────────────────────
@@ -82,23 +120,6 @@ impl NowPlayingState {
         } else {
             position_ms
         }
-    }
-
-    pub fn set_playing(&mut self, is_playing: bool) {
-        if self.is_playing == is_playing {
-            return;
-        }
-
-        if !is_playing {
-            self.position_ms = self.current_position_ms();
-        }
-
-        self.is_playing = is_playing;
-        self.position_anchor = if is_playing {
-            Some(Instant::now())
-        } else {
-            None
-        };
     }
 
     // ─────────────────────────────────────────────
