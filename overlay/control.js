@@ -9,6 +9,7 @@ const skinSettings = {
     default: { width: 400, height: 520, label: "Default" },
     ambient: { width: 470, height: 140, label: "Ambient" },
     glass: { width: 440, height: 200, label: "Glass" },
+    cassette: { width: 900, height: 490, label: "Cassette" },
 };
 
 const urlElement = document.getElementById("overlay-url");
@@ -62,26 +63,44 @@ function updateSkinPreview() {
 function updatePreviewScale() {
     const skin = skinSettings[skinSelect.value] || skinSettings.default;
     const stage = skinPreview.parentElement;
+
     if (!stage) return;
 
     const stageStyle = window.getComputedStyle(stage);
+
     const horizontalPadding =
         Number.parseFloat(stageStyle.paddingLeft) +
         Number.parseFloat(stageStyle.paddingRight);
+
     const verticalPadding =
         Number.parseFloat(stageStyle.paddingTop) +
         Number.parseFloat(stageStyle.paddingBottom);
-    const availableWidth = Math.max(0, stage.clientWidth - horizontalPadding);
-    const availableHeight = Math.max(0, stage.clientHeight - verticalPadding);
+
+    const availableWidth = Math.max(
+        0,
+        stage.clientWidth - horizontalPadding
+    );
+
+    const availableHeight = Math.max(
+        0,
+        stage.clientHeight - verticalPadding
+    );
+
     if (!availableWidth || !availableHeight) return;
 
+    // Target a 500px preview, but respect the stage boundaries.
+    const targetWidth = Math.min(500, availableWidth);
+
     const scale = Math.min(
-        availableWidth / skin.width,
+        targetWidth / skin.width,
         availableHeight / skin.height,
         1
     );
 
-    skinPreview.style.setProperty("--preview-scale", String(scale));
+    // Resize the iframe itself instead of visually transforming it.
+    skinPreview.style.width = `${skin.width * scale}px`;
+    skinPreview.style.height = `${skin.height * scale}px`;
+    skinPreview.style.removeProperty("transform");
 }
 
 function updateBrowserSize() {

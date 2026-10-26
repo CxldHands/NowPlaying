@@ -81,6 +81,7 @@ async fn overlay(Query(query): Query<OverlayQuery>) -> impl IntoResponse {
     let html = match skin {
         "ambient" => include_str!("../overlay/skins/ambient/index.html"),
         "glass" => include_str!("../overlay/skins/glass/index.html"),
+        "cassette" => include_str!("../overlay/skins/cassette/index.html"),
         _ => include_str!("../overlay/skins/default/index.html"),
     };
 
@@ -142,27 +143,41 @@ async fn glass_script() -> impl IntoResponse {
 }
 
 // ─────────────────────────────────────────────
-// Preview Assets
+// Cassette Skin
 // ─────────────────────────────────────────────
 
-async fn default_preview_art() -> ([(&'static str, &'static str); 1], &'static [u8]) {
+async fn cassette_art() -> impl IntoResponse {
     (
-        [("Content-Type", "image/webp")],
-        include_bytes!("../overlay/assets/previews/default.webp"),
+        [(axum::http::header::CONTENT_TYPE, "image/svg+xml")],
+        include_str!("../overlay/skins/cassette/cassette.svg"),
     )
 }
 
-async fn ambient_preview_art() -> ([(&'static str, &'static str); 1], &'static [u8]) {
+async fn cassette_reel_left() -> impl IntoResponse {
     (
-        [("Content-Type", "image/webp")],
-        include_bytes!("../overlay/assets/previews/ambient.webp"),
+        [(axum::http::header::CONTENT_TYPE, "image/svg+xml")],
+        include_str!("../overlay/skins/cassette/reel-left.svg"),
     )
 }
 
-async fn glass_preview_art() -> ([(&'static str, &'static str); 1], &'static [u8]) {
+async fn cassette_reel_right() -> impl IntoResponse {
     (
-        [("Content-Type", "image/webp")],
-        include_bytes!("../overlay/assets/previews/glass.webp"),
+        [(axum::http::header::CONTENT_TYPE, "image/svg+xml")],
+        include_str!("../overlay/skins/cassette/reel-right.svg"),
+    )
+}
+
+async fn cassette_style() -> impl IntoResponse {
+    (
+        [("Content-Type", "text/css; charset=utf-8")],
+        include_str!("../overlay/skins/cassette/style.css"),
+    )
+}
+
+async fn cassette_script() -> impl IntoResponse {
+    (
+        [("Content-Type", "application/javascript; charset=utf-8")],
+        include_str!("../overlay/skins/cassette/skin.js"),
     )
 }
 
@@ -399,10 +414,12 @@ pub async fn start_server(
         // Glass skin
         .route("/skins/glass/style.css", get(glass_style))
         .route("/skins/glass/skin.js", get(glass_script))
-        // Preview assets
-        .route("/assets/previews/default.webp", get(default_preview_art))
-        .route("/assets/previews/ambient.webp", get(ambient_preview_art))
-        .route("/assets/previews/glass.webp", get(glass_preview_art))
+        // Cassette skin
+        .route("/skins/cassette/cassette.svg", get(cassette_art))
+        .route("/skins/cassette/reel-left.svg", get(cassette_reel_left))
+        .route("/skins/cassette/reel-right.svg", get(cassette_reel_right))
+        .route("/skins/cassette/style.css", get(cassette_style))
+        .route("/skins/cassette/skin.js", get(cassette_script))
         // Shared assets
         .route("/app.js", get(app_script))
         .route("/utils.js", get(utils))

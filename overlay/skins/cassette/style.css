@@ -1,0 +1,303 @@
+:root {
+    color-scheme: only dark;
+
+    --marker-font: "Permanent Marker", "Segoe Print", cursive;
+    --label-ink: #171511;
+    --shell-text: #f0e7d2;
+
+    --bar-empty: #000000;
+    --bar-border: #ffffff;
+    --bar-active: #ff8c00;
+    --bar-active-end: #ff8c00;
+
+    --reel-image-width: 16%;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background: transparent;
+}
+
+body {
+    display: grid;
+    place-items: center;
+    padding: 8px;
+    overflow: hidden;
+}
+
+.cassette {
+    position: relative;
+    isolation: isolate;
+
+    width: min(100%, 900px);
+    aspect-ratio: 1446.677 / 785.8;
+
+    overflow: hidden;
+}
+
+/* Stationary base SVG */
+
+.cassette-art {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+
+    display: block;
+    width: 100%;
+    height: 100%;
+
+    object-fit: fill;
+
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Reel overlays: position their centers over the SVG centers */
+
+.reel {
+    position: absolute;
+    z-index: 1;
+
+    width: var(--reel-image-width);
+    height: auto;
+    aspect-ratio: 1;
+
+    /*
+     * These percentages use the full cassette container.
+     * The uploaded SVG viewBox and container aspect ratio match.
+     */
+    top: 47.3%;
+
+    /*
+     * Keep the image's center at the target coordinates.
+     * Its own transparent padding is accounted for by its size.
+     */
+    transform: translate(-50%, -50%) rotate(0deg);
+    transform-origin: 50% 50%;
+
+    display: block;
+    object-fit: contain;
+
+    animation: reel-spin 2s linear infinite;
+    animation-play-state: paused;
+
+    pointer-events: none;
+    user-select: none;
+    will-change: transform;
+}
+
+.reel-left {
+    left: 28.5%;
+}
+
+.reel-right {
+    left: 71.7%;
+}
+
+/* Rotate without losing the centering translation */
+
+.cassette.is-playing .reel {
+    animation-play-state: running;
+}
+
+@keyframes reel-spin {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Track title */
+
+.label {
+    position: absolute;
+    z-index: 2;
+    top: 13%;
+    left: 15%;
+    width: 70%;
+    height: 17%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+    text-align: center;
+    pointer-events: none;
+}
+
+#title {
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+
+    color: #171511;
+    font-family: var(--marker-font);
+    font-size: clamp(32px, 7vw, 72px);
+    font-weight: 400;
+    line-height: 1;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Segmented progress indicator */
+
+.playback {
+    position: absolute;
+    z-index: 3;
+
+    top: 45%;
+    left: 36%;
+    width: 28%;
+    height: 5%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    pointer-events: none;
+}
+
+.progress-track {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: clamp(2px, 0.35vw, 5px);
+
+    width: 100%;
+    height: 100%;
+    padding: 2px;
+
+    overflow: hidden;
+
+    border: 1px solid var(--bar-border);
+    border-radius: 5px;
+
+    background: rgb(12 12 11 / 80%);
+
+    box-shadow:
+        inset 0 1px 3px rgb(0 0 0 / 90%),
+        0 0 4px rgb(0 0 0 / 35%);
+}
+
+.progress-segment {
+    min-width: 0;
+    height: 100%;
+
+    border-radius: 2px;
+    background: var(--bar-empty);
+
+    box-shadow: inset 0 0 1px rgb(0 0 0 / 80%);
+
+    transition:
+        background-color 120ms linear,
+        box-shadow 120ms linear;
+}
+
+/* Segments already passed */
+.progress-segment.is-completed {
+    background: #ffffff;
+
+    box-shadow: inset 0 0 1px rgb(0 0 0 / 40%);
+}
+
+/* Segment currently being played */
+.progress-segment.is-current {
+    background: linear-gradient(
+        180deg,
+        var(--bar-active),
+        var(--bar-active-end)
+    );
+
+    box-shadow:
+        0 0 4px rgb(255 140 0 / 45%),
+        inset 0 0 1px #ffffff;
+}
+
+/* Artist */
+
+.artist-label::before {
+    content: "";
+    position: absolute;
+
+    top: 0;
+    left: 15%;
+    width: 70%;
+    border-top: 1px dotted #171511;
+
+    opacity: 0.7;
+}
+
+.artist-label {
+    position: absolute;
+    z-index: 2;
+    top: 25%;
+    left: 20%;
+    width: 60%;
+    height: 10%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+    text-align: center;
+    pointer-events: none;
+}
+
+#artist {
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+
+    color: #171511;
+    font-family: var(--marker-font);
+    font-size: clamp(19px, 4vw, 38px);
+    font-weight: 400;
+    line-height: 1;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Responsive scaling */
+
+@media (max-width: 480px) {
+    body {
+        padding: 4px;
+    }
+
+    #title {
+        font-size: clamp(12px, 3.2vw, 18px);
+    }
+
+    #artist {
+        font-size: clamp(10px, 2.6vw, 15px);
+    }
+
+    .progress-track {
+        gap: 2px;
+        padding: 1px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reel {
+        animation: none;
+        will-change: auto;
+    }
+
+    .progress-segment {
+        transition: none;
+    }
+}

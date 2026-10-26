@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Now Playing - Cassette</title>
+
+    <link rel="icon" href="/favicon.svg">
+    <link rel="stylesheet" href="/skins/cassette/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap"
+        rel="stylesheet"
+    >
+</head>
+<body>
+    <main id="cassette" class="cassette" aria-label="Cassette now playing">
+
+        <!-- Stationary cassette body -->
+        <img
+            class="cassette-art"
+            src="/skins/cassette/cassette.svg"
+            alt=""
+            aria-hidden="true"
+        >
+
+        <!-- Independently rotating reels -->
+        <img
+            class="reel reel-left"
+            src="/skins/cassette/reel-left.svg"
+            alt=""
+            aria-hidden="true"
+        >
+
+        <img
+            class="reel reel-right"
+            src="/skins/cassette/reel-right.svg"
+            alt=""
+            aria-hidden="true"
+        >
+
+        <!-- Track title -->
+        <section class="label" aria-label="Track title">
+            <h1 id="title">Waiting for music</h1>
+        </section>
+
+        <!-- Segmented playback indicator -->
+        <section class="playback" aria-label="Track progress">
+            <div
+                id="progress-track"
+                class="progress-track"
+                role="progressbar"
+                aria-label="Track progress"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+            ></div>
+        </section>
+
+        <!-- Artist -->
+        <section class="artist-label" aria-label="Artist">
+            <p id="artist">Start playing something</p>
+        </section>
+
+    </main>
+
+    <script src="/utils.js"></script>
+    <script src="/skins/cassette/skin.js"></script>
+    <script src="/app.js"></script>
+</body>
+</html>

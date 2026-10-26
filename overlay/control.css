@@ -116,19 +116,27 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--ink); outl
     mask-image: linear-gradient(to bottom, transparent, #000 15%, #000 82%, transparent);
 }
 
-.preview-stage { position: relative; flex: 1; display: grid; place-items: center; min-height: 0; padding: 24px 0; }
-.preview-stage { overflow: hidden; }
+.preview-stage {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    padding: 24px 0;
+    overflow: hidden;
+}
+
 #skin-preview {
     display: block;
     flex: 0 0 auto;
     width: 400px;
     height: 520px;
-    max-width: none;
-    max-height: none;
+    max-width: 100%;
     border: 0;
     background: transparent;
-    transform: scale(var(--preview-scale, 1));
-    transform-origin: center;
+    margin: 0 auto;
     pointer-events: none;
 }
 .preview-caption { position: relative; padding-top: 10px; color: var(--mute); font: 500 clamp(11px, .8vw, 13px) var(--mono); letter-spacing: .12em; text-align: center; text-transform: uppercase; }

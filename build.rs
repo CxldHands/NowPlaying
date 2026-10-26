@@ -9,8 +9,8 @@ fn main() {
         res.set("CompanyName", "NowPlaying");
         res.set("LegalCopyright", "Copyright © 2026 NowPlaying");
 
-        res.set("FileVersion", "0.3.0.0");
-        res.set("ProductVersion", "0.3.0.0");
+        res.set("FileVersion", "0.4.0.0");
+        res.set("ProductVersion", "0.4.0.0");
 
         res.compile().expect("Failed to compile Windows resources");
     }
